@@ -220,7 +220,7 @@ class aia_mkimage:
                 self.wav = []
                 img3d = np.zeros((img[0].data.shape[0],img[0].data.shape[1],3))
                 for j,i in enumerate(img):
-                    self.wav.append('{0:4.0f}'.format(i.wavelength.value)).replace(' ','0')
+                    self.wav.append('{0:4.0f}'.format(i.wavelength.value).replace(' ','0'))
                     #set normalized scaling for every observation
                     ivmin = self.img_scale[self.wav[j]][1]
                     ivmax = self.img_scale[self.wav[j]][2]
@@ -267,8 +267,6 @@ class aia_mkimage:
                 
 
                 #set text location
-                print self.w0,maxx,minx
-                print self.h0,maxy,miny
                 if self.w0 > self.h0:
                     txtx = -(self.w0-self.h0)
                     txty = (maxy-miny)*0.01
