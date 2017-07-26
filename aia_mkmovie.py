@@ -14,6 +14,8 @@ try:
 except ImportError:
     sys.stdout.write(sys.stderr,"sunpy not installed, use pip install sunpy --upgrade")
 
+from make_movie import create_movie
+
 from matplotlib.transforms import Bbox
 import matplotlib.dates as mdates
 import subprocess
@@ -431,7 +433,7 @@ class aia_mkimage:
 class aia_mkmovie:
 
     #initialize aia_mkmovie
-    def __init__(start,end,wav,cadence='6m',h0=1900,w0=1144,dpi=300,usehv = False,panel=False,color3=False,select=False,videowall=True,nproc=2,goes=False,wind=False,x0=0.0,y0=0.0,archive="/data/SDO/AIA/synoptic/",dfmt = '%Y/%m/%d %H:%M:%S',outf=True,synoptic=True,odir='working/'):
+    def __init__(start,end,wav,cadence='6m',h0=1900,w0=1144,dpi=300,usehv = False,panel=False,color3=False,select=False,videowall=True,nproc=2,goes=False,wind=False,x0=0.0,y0=0.0,archive="/data/SDO/AIA/synoptic/",dfmt = '%Y/%m/%d %H:%M:%S',outf=True,synoptic=True,odir='working/',frate=10):
 
 
         #list of acceptable wavelengths
@@ -469,6 +471,7 @@ class aia_mkmovie:
         #directory for file output
         self.sdir = self.start.date().strftime('%Y%m%d_%H%M')
 
+        #check output file
         if isinstance(outf,str):
             self.outf = outf
         elif outf: 
@@ -504,6 +507,13 @@ class aia_mkmovie:
             self.h0 = h0
         else:
             sys.stdout.write('h0 must be an integer or float')
+            sys.exit(1)
+         
+        #check image height
+        if isinstance(frate,(int,float)):
+            self.frate = int(frate)
+        else:
+            sys.stdout.write('frate must be an integer or float')
             sys.exit(1)
          
         #check image width
@@ -696,14 +706,6 @@ class aia_mkmovie:
             #create datetime array
             self.aceadat['time_dt'] = [datetime(int(i['YR']),int(i['MO']),int(i['DA']))+dt(seconds=i['Secs_1']) for i in self.aceadat]
         
-        #write ffmpeg command
-        com = open(sdir+'/run_ffmpeg.csh','w')
-        com.write('/usr/local/bin/ffmpeg -y -f image2 -r {0} -i working/symlinks/seq%4d.png -an -pix_fmt "yuv420p" -vcodec libx264 -level 41 -crf 18.0 -b 8192k -r {0} -bufsize 8192k -maxrate 8192k -g {0} -coder 1 -profile main -preset faster -qdiff 4 -qcomp 0.7 -directpred 3 -flags +loop+mv4 -cmp +chroma -partitions +parti4x4+partp8x8+partb8x8 -subq 7 -me_range 16 -keyint_min 1 -sc_threshold 40 -i_qfactor 0.71 -rc_eq "blurCplx^(1-qComp)" -s "1900x1180" -b_strategy 1 -bidir_refine 1 -refs 6 -deblockalpha 0 -deblockbeta 0 -trellis 1 -x264opts keyint={0}:min-keyint=1:bframes=1 -threads 2 final/{1}.mp4\n'.format(self.frate,self.outf))
-        com.close()
-
-
-
-
 
 
         #J. Prchlik 2016/10/06
@@ -722,7 +724,7 @@ class aia_mkmovie:
         if self.single:
             fits_files = src.get_filelist(date=self.end.strftime("%Y-%m-%d"),time=self.end.strftime("%H:%M:%S"),span=sendspan,wavelnth=self.wav)
             qfls, qtms = src.run_quality_check(synoptic=self.synoptic)
-            fits_files.append(src.get_sample(files = qfls, sample = self.cadence, nfiles = 1))
+            self.fits_files.append(src.get_sample(files = qfls, sample = self.cadence, nfiles = 1))
         else:
            #loop over all wavelengths in array
             for i in self.wav:
@@ -739,13 +741,12 @@ class aia_mkmovie:
         
 
 
-    def create_movie(self):
+    def create_images_movie(self):
 
         #J. Prchlik 2016/10/06
         #Switched jp2 to fits
-        dayarray = glob.glob(sdir+'/raw/*fits')
+        dayarray = glob.glob(self.sdir+'/raw/*fits')
         forpool = np.arange(len(dayarray))
-
         #loop is for testing purposes
         #for i in forpool: format_img(i)
         if self.nproc > 1:
@@ -757,23 +758,6 @@ class aia_mkmovie:
             for i in forpool: format_img(i)
 
 
-        startd = self.sdir+'/' #start from the base directory to create symbolic link
-        #J. Prchlik 2016/10/06
-           # create new symbolic links in order 
-        fipng = glob.glob(startd+'working/*png')
-        for i,outfi in enumerate(fipng):
-            symli = startd+'/working/symlinks/seq{0:4d}.png'.format(i).replace(' ','0')
-            if os.path.islink(symli): os.unlink(symli) # replace existing symbolic link
-            os.symlink('../'+outfi.split('/')[-1],symli)
-        
-        
-        #change to current directory
-        os.chdir(sdir)
-        
-        #change file to executable
-        mod = subprocess.call(['/bin/csh','-c','chmod a+x run_ffmpeg.csh'])
-        
-        #run ffmpeg
-        run = subprocess.call(['/bin/csh','-c','./run_ffmpeg.csh'])
+        create_movie(odir = 'final/',pdir = self.odir, ext = 'png', w0 = self.w0, h0=self.h0,frate=self.frate,outmov=self.outf)
         
         
