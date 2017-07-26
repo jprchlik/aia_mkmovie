@@ -95,10 +95,10 @@ class aia_mkimage:
      
 
         #check format of acedat Table if it exits 
-        if isinstance(acedat,Table):
-            self.acedat = acedat
+        if isinstance(aceadat,Table):
+            self.aceadat = aceadat
         elif acedat == False:
-            self.acedat = [] #do not plot goes data
+            self.aceadat = [] #do not plot goes data
         else:
             sys.stdout.write('acedat must be a astropy table')
 
