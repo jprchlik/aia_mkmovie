@@ -189,19 +189,19 @@ class aia_mkimage:
             sys.exit(1)
          
         #list of acceptable wavelengths
-        self.awavs = ['93','131','171','193','211','304','335','1600','1700']
+        self.awavs = ['0094','0131','0171','0193','0211','0304','0335','1600','1700']
 
 
         #Dictionary for vmax, vmin, and color
-        self.img_scale = {  '94':[cm.sdoaia94  ,np.arcsinh(0.001),np.arcsinh(150.)],
-                           '131':[cm.sdoaia131 ,np.arcsinh(0.001),np.arcsinh(500.)],
-                           '171':[cm.sdoaia171 ,np.arcsinh(10.),np.arcsinh(6000.)],
-                           '193':[cm.sdoaia193 ,np.arcsinh(0.001),np.arcsinh(8000.)],
-                           '211':[cm.sdoaia211 ,np.arcsinh(0.001),np.arcsinh(4000.)],
-                           '304':[cm.sdoaia304 ,np.arcsinh(1.),np.arcsinh(300.)],
-                           '335':[cm.sdoaia335 ,np.arcsinh(0.001),np.arcsinh(100.)],
-                          '1600':[cm.sdoaia1600,np.arcsinh(0.001),np.arcsinh(500.)],
-                          '1700':[cm.sdoaia1700,np.arcsinh(0.001),np.arcsinh(4000.)]}
+        self.img_scale = {'0094':[cm.sdoaia94  ,np.arcsinh(1.),np.arcsinh(150.)],
+                          '0131':[cm.sdoaia131 ,np.arcsinh(1.),np.arcsinh(500.)],
+                          '0171':[cm.sdoaia171 ,np.arcsinh(10.),np.arcsinh(6000.)],
+                          '0193':[cm.sdoaia193 ,np.arcsinh(10.),np.arcsinh(8000.)],
+                          '0211':[cm.sdoaia211 ,np.arcsinh(10.),np.arcsinh(4000.)],
+                          '0304':[cm.sdoaia304 ,np.arcsinh(1.),np.arcsinh(300.)],
+                          '0335':[cm.sdoaia335 ,np.arcsinh(1.),np.arcsinh(100.)],
+                          '1600':[cm.sdoaia1600,np.arcsinh(20.),np.arcsinh(500.)],
+                          '1700':[cm.sdoaia1700,np.arcsinh(200.),np.arcsinh(4000.)]}
 
 
     #for j,i in enumerate(dayarray):
@@ -220,7 +220,7 @@ class aia_mkimage:
                 self.wav = []
                 img3d = np.zeros((img[0].data.shape[0],img[0].data.shape[1],3))
                 for j,i in enumerate(img):
-                    self.wav.append('{0:2.0f}'.format(i.wavelength.value))
+                    self.wav.append('{0:4.0f}'.format(i.wavelength.value)).replace(' ','0')
                     #set normalized scaling for every observation
                     ivmin = self.img_scale[self.wav[j]][1]
                     ivmax = self.img_scale[self.wav[j]][2]
@@ -233,7 +233,7 @@ class aia_mkimage:
                 #output png file
                 outfi = self.odir+'AIA_{0}_'.format(img[0].date.strftime('%Y%m%d_%H%M%S'))+'{0}_{1}_{2}.png'.format(*self.wav)
             else:
-                self.wav ='{0:2.0f}'.format( img.wavelength.value)
+                self.wav ='{0:4.0f}'.format( img.wavelength.value).replace(' ','0')
                 #use default color tables
                 icmap = self.img_scale[self.wav][0]
                 ivmin = self.img_scale[self.wav][1]
@@ -266,15 +266,27 @@ class aia_mkimage:
 
                 
 
+                #set text location
+                print self.w0,maxx,minx
+                print self.h0,maxy,miny
+                if self.w0 > self.h0:
+                    txtx = -(self.w0-self.h0)
+                    txty = (maxy-miny)*0.01
+                elif self.w0 < self.h0:
+                    txty = -(self.h0-self.w0)
+                    txtx = (maxx-minx)*0.01
+                if self.w0 == self.h0:
+                    txtx = (maxx-minx)*0.01
+                    txty = (maxy-miny)*0.01
 
         #plot the image in matplotlib
                 #use color composite image if color3 set
                 if self.color3:
                     ax.imshow(np.arcsinh(img3d),interpolation='none',origin='lower',extent=[minx,maxx,miny,maxy])
-                    ax.text(-2000,-1100,'AIA {2}/{1}/{0}'.format(*self.wav)+'- {0}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=50,fontweight='bold')
+                    ax.text(minx+txtx,miny+txty,'AIA {2}/{1}/{0}'.format(*self.wav)+'- {0}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=50,fontweight='bold')
                 else:
                     ax.imshow(np.arcsinh(img.data),interpolation='none',cmap=icmap,origin='lower',vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy])
-                    ax.text(-2000,-1100,'AIA {0} - {1}Z'.format(self.wav,img.date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=50,fontweight='bold')
+                    ax.text(minx+txtx,miny+txty,'AIA {0} - {1}Z'.format(self.wav,img.date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=50,fontweight='bold')
                 if self.goes:
                 #use the first image for goes and ace plotting
                     if isinstance(img,list): img = img[0] 
@@ -425,7 +437,7 @@ class aia_mkmovie:
 
 
         #list of acceptable wavelengths
-        self.awavs = ['93','131','171','193','211','304','335','1600','1700']
+        self.awavs = ['94','131','171','193','211','304','335','1600','1700']
 
         #use synoptic image checking (default = True)
         self.synoptic = synoptic
