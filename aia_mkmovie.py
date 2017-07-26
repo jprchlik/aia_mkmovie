@@ -32,28 +32,27 @@ from astropy.table import vstack,Table,join
 
 from SMEARpy import Scream
 
-def get_file(ind):
-#Source ID 11 is AIA 193
-#    fils = ind.replace(':','_').replace('/','_').replace(' ','_')+'_AIA_193.jp2'
-    meta = hv.get_closest_image(ind,sourceId=11)
-    date = meta['date'].strftime('%Y_%m_%d__%H_%M_%S')
-    mils = float(meta['date'].strftime('%f'))/1000.
-    fstr = date+'_*__SDO_AIA_AIA_193.jp2'.format(mils).replace(' ','0')
-#    test = os.path.isfile(sdir+'/raw/'+fstr)
-    test = glob.glob(sdir+'/raw/'+fstr)
-    if len(test) == 0:
-#        filep = hv.download_png(ind,0.3,"[11,1,100]",directory=sdir+'/raw',x0=0,y0=0,width=int(rv*8192),height=8192,watermark=False)#,y1=-1200,y2=1200,x1=-1900,x2=1900)
-        filep = hv.download_jp2(ind,sourceId="11",directory=sdir+'/raw',clobber=True)#,y1=-1200,y2=1200,x1=-1900,x2=1900)
-
+#import hv download (probably wont do)
+####def get_file(ind):
+#####Source ID 11 is AIA 193
+#####    fils = ind.replace(':','_').replace('/','_').replace(' ','_')+'_AIA_193.jp2'
+####    meta = hv.get_closest_image(ind,sourceId=11)
+####    date = meta['date'].strftime('%Y_%m_%d__%H_%M_%S')
+####    mils = float(meta['date'].strftime('%f'))/1000.
+####    fstr = date+'_*__SDO_AIA_AIA_193.jp2'.format(mils).replace(' ','0')
+#####    test = os.path.isfile(sdir+'/raw/'+fstr)
+####    test = glob.glob(sdir+'/raw/'+fstr)
+####    if len(test) == 0:
+#####        filep = hv.download_png(ind,0.3,"[11,1,100]",directory=sdir+'/raw',x0=0,y0=0,width=int(rv*8192),height=8192,watermark=False)#,y1=-1200,y2=1200,x1=-1900,x2=1900)
+####        filep = hv.download_jp2(ind,sourceId="11",directory=sdir+'/raw',clobber=True)#,y1=-1200,y2=1200,x1=-1900,x2=1900)
+####
 
 
 
 
 class aia_mkimage:
 
-    def __init__(self,dayarray,sday,eday,aceadat,w0,h0,dpi,sc,goes=False,goesday=False,ace=False,single=True,panel=False,color3=False,time_stamp=True,set_wav=False):
-
-
+    def __init__(self,dayarray,sday=False,eday=False,w0=1900.,h0=1200.,dpi=100.,sc=1.,goes=False,goesday=False,ace=False,aceadat=False,single=True,panel=False,color3=False,time_stamp=True):
 
         #check format of input day array
         if isinstance(dayarray,list):
@@ -64,12 +63,51 @@ class aia_mkimage:
             sys.stdout.write('dayarray must be a list or string')
             sys.exit(1)
 
+        #check if ace flag is set
+        if isinstance(ace,bool):  
+            self.ace = ace
+            if self.ace: goes = True #is ace is set goes must also be set
+        else:
+            sys.stdout.write('ace must be a boolean')
+            sys.exit(1)
+
         #check if goes flag is set
         if isinstance(goes,bool): 
             self.goes = goes
         else:
             sys.stdout.write('goes must be a boolean')
             sys.exit(1)
+
+
+     
+
+        #check format of acedat Table if it exits 
+        if isinstance(acedat,Table):
+            self.acedat = acedat
+        elif acedat == False:
+            self.acedat = [] #do not plot goes data
+        else:
+            sys.stdout.write('acedat must be a astropy table')
+
+        #if goes is set you must give the plot a start and end date for plotting the goes xray flux
+        if self.goes:
+            #check inserted end time
+            if isinstance(sday,datetime):
+                self.sday = sday
+            elif isinstance(sday,str):
+                self.sday = datetime.strptime(sday,dfmt)
+            else:
+                sys.stdout.write('sday must be a datetime object or formatted string')
+                sys.exit(1)
+
+            #check inserted end time
+            if isinstance(eday,datetime):
+                self.eday = eday
+            elif isinstance(eday,str):
+                self.eday = datetime.strptime(eday,dfmt)
+            else:
+                sys.stdout.write('eday must be a datetime object or formatted string')
+                sys.exit(1)
 
         #check format of goesday Table if it exits 
         if isinstance(goesday,Table):
@@ -78,30 +116,60 @@ class aia_mkimage:
             self.goesday = [] #do not plot goes data
         else:
             sys.stdout.write('goesday must be a astropy table')
-
-
-        #if goes is set you must give the plot a start and end date for plotting the goes xray flux
-        if self.goes:
-            self.sday = sday
-            self.eday = eday
-        self.ace = ace
-        self.aceadat = aceadat
-        self.w0 = w0
-        self.h0 = h0
-        self.dpi = dpi
-        self.sc = sc
-        self.single = single
         self.panel = panel
         self.color3 = color3 
+        #check image height
+        if isinstance(h0,(int,float)):
+            self.h0 = h0
+        else:
+            sys.stdout.write('h0 must be an integer or float')
+            sys.exit(1)
+         
+        #check image width
+        if isinstance(w0,(int,float)):
+            self.w0 = w0
+        else: 
+            sys.stdout.write('w0 must be an integer or float')
+            sys.exit(1)
+
  
+        #check dpi
+        if isinstance(w0,(int,float)):
+            self.dpi = dpi
+        else: 
+            sys.stdout.write('dpi must be an integer or float')
+            sys.exit(1)
 
-        #check to see if set_wav is given
-        if set_wav == False:
-        
-    
+        #check sc
+        if isinstance(w0,(int,float)):
+            self.sc = sc
+        else: 
+            sys.stdout.write('sc must be an integer or float')
+            sys.exit(1)
 
+        #check if single wavelength flag is set
+        if isinstance(single,bool):
+            self.single = single
+        else:
+            sys.stdout.write('single must be a boolean')
+            sys.exit(1)
+      
+        #create a panel movie
+        if isinstance(panel,bool):
+            self.panel = panel
+        else:
+            sys.stdout.write('panel must be a boolean')
+            sys.exit(1)
+        #create 3 color image (default = False)
+        if isinstance(color3,bool):
+            self.color3 = color3
+        else:
+            sys.stdout.write('color3 must be a boolean')
+            sys.exit(1)
+         
         #list of acceptable wavelengths
         self.awavs = ['93','131','171','193','211','304','335','1600','1700']
+
 
         #Dictionary for vmax, vmin, and color
         self.img_scale = {  '94':[cm.sdoaia94  ,70.,7500.],
@@ -145,9 +213,16 @@ class aia_mkimage:
         #return extent of image
                 img = sunpy.map.Map(filep)
                 maxx,minx,maxy,miny = self.img_extent(img)
+
+
+                #get plot parameters
+                icmap = self.img_scale[self.wav][0]
+                ivmin = self.img_scale[self.wav][1]
+                ivmax = self.img_scale[self.wav][2]
+
         #plot the image in matplotlib
         #        ax.imshow(img.data,interpolation='none',cmap=cm.sdoaia193,vmin=0,vmax=255,origin='lower',extent=[minx,maxx,miny,maxy])
-                ax.imshow(np.arcsinh(img.data),interpolation='none',cmap=cm.sdoaia193,origin='lower',vmin=np.arcsinh(70.),vmax=np.arcsinh(7500.),extent=[minx,maxx,miny,maxy])
+                ax.imshow(np.arcsinh(img.data),interpolation='none',cmap=icmap,origin='lower',vmin=ivmin,vmax=np.arcsinh(7500.),extent=[minx,maxx,miny,maxy])
         #        ax.set_axis_bgcolor('black')
                 ax.text(-2000,-1100,'AIA 193 - '+img.date.strftime('%Y/%m/%d - %H:%M:%S')+'Z',color='white',fontsize=36,zorder=50,fontweight='bold')
                 if goes:
