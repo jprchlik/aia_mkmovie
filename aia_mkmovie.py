@@ -6,15 +6,14 @@ __email__   = "jakub.prchlik@cfa.harvard.edu"
 import matplotlib
 #fixes multiprocess issue
 matplotlib.use('agg')
+import sys
 
 try:
     import sunpy.map
     from sunpy.cm import cm
 except ImportError:
-    import sys
     sys.stdout.write(sys.stderr,"sunpy not installed, use pip install sunpy --upgrade")
 
-import sys
 from matplotlib.transforms import Bbox
 import matplotlib.dates as mdates
 import subprocess
@@ -52,13 +51,39 @@ def get_file(ind):
 
 class aia_mkimage:
 
-    def __init__(self,dayarray,goes,goesday,sday,eday,aceadat,ace,w0,h0,dpi,sc,single,panel,color3):
+    def __init__(self,dayarray,sday,eday,aceadat,w0,h0,dpi,sc,goes=False,goesday=False,ace=False,single=True,panel=False,color3=False,time_stamp=True,set_wav=False):
 
-        self.dayarray = dayarray
-        self.goes = goes
-        self.goesday = goesday
-        self.sday = sday
-        self.eday = eday
+
+
+        #check format of input day array
+        if isinstance(dayarray,list):
+            self.dayarray = dayarray
+        elif isinstance(dayarray,str):
+            self.dayarray = [dayarray]
+        else:
+            sys.stdout.write('dayarray must be a list or string')
+            sys.exit(1)
+
+        #check if goes flag is set
+        if isinstance(goes,bool): 
+            self.goes = goes
+        else:
+            sys.stdout.write('goes must be a boolean')
+            sys.exit(1)
+
+        #check format of goesday Table if it exits 
+        if isinstance(goesday,Table):
+            self.goesday = goesday
+        elif goesday == False:
+            self.goesday = [] #do not plot goes data
+        else:
+            sys.stdout.write('goesday must be a astropy table')
+
+
+        #if goes is set you must give the plot a start and end date for plotting the goes xray flux
+        if self.goes:
+            self.sday = sday
+            self.eday = eday
         self.ace = ace
         self.aceadat = aceadat
         self.w0 = w0
@@ -68,16 +93,36 @@ class aia_mkimage:
         self.single = single
         self.panel = panel
         self.color3 = color3 
+ 
+
+        #check to see if set_wav is given
+        if set_wav == False:
+        
+    
+
+        #list of acceptable wavelengths
+        self.awavs = ['93','131','171','193','211','304','335','1600','1700']
+
+        #Dictionary for vmax, vmin, and color
+        self.img_scale = {  '94':[cm.sdoaia94  ,70.,7500.],
+                           '131':[cm.sdoaia131 ,70.,7500.],
+                           '171':[cm.sdoaia171 ,70.,7500.],
+                           '193':[cm.sdoaia193 ,70.,7500.],
+                           '211':[cm.sdoaia211 ,70.,7500.],
+                           '304':[cm.sdoaia304 ,70.,7500.],
+                           '335':[cm.sdoaia335 ,70.,7500.],
+                          '1600':[cm.sdoaia1600,70.,7500.],
+                          '1700':[cm.sdoaia1700,70.,7500.]}
 
 
     #for j,i in enumerate(dayarray):
     #reformat file to be in 1900x1200 array and contain timetext
-    def format_img(self,i):
+    def format_img(self):
     
             #input fits file
-            filep = dayarray[i]
+            filep = self.dayarray[i]
             #output png file
-            outfi = filep.replace('raw','working').replace('fits','png')
+            outfi = filep.replace('raw','working').replace#('fits','png')
             test = os.path.isfile(outfi)
         	
         #check image quality
@@ -99,7 +144,7 @@ class aia_mkimage:
         #Block add J. Prchlik (2016/10/06) to give physical coordinate values 
         #return extent of image
                 img = sunpy.map.Map(filep)
-                maxx,minx,maxy,miny = img_extent(img)
+                maxx,minx,maxy,miny = self.img_extent(img)
         #plot the image in matplotlib
         #        ax.imshow(img.data,interpolation='none',cmap=cm.sdoaia193,vmin=0,vmax=255,origin='lower',extent=[minx,maxx,miny,maxy])
                 ax.imshow(np.arcsinh(img.data),interpolation='none',cmap=cm.sdoaia193,origin='lower',vmin=np.arcsinh(70.),vmax=np.arcsinh(7500.),extent=[minx,maxx,miny,maxy])
@@ -135,7 +180,7 @@ class aia_mkimage:
                     ingoes.scatter(goesdat['time_dt'][clos][-1],goesdat['Long'][clos][-1],color='red',s=10,zorder=1000)
                     ingoes.set_yscale('log')
     #plot ace information
-                if ((ace) & (goes)):
+                if ((self.ace) & (self.goes)):
                     use, = np.where((aceadat['time_dt'] < img.date+dt(minutes=150)) & (aceadat['S_1'] == 0.0) & (aceadat['S_2'] == 0) & (aceadat['Speed'] > -1000.))
                     clos,= np.where((aceadat['time_dt'] < img.date) & (aceadat['S_1'] ==  0) & (aceadat['S_2'] == 0) & (aceadat['Speed'] > -1000))
                     
@@ -535,6 +580,8 @@ class aia_mkmovie:
                 continue
         
 
+
+    def create_movie(self):
 
         #J. Prchlik 2016/10/06
         #Switched jp2 to fits
