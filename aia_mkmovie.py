@@ -52,7 +52,7 @@ from SMEARpy import Scream
 
 class aia_mkimage:
 
-    def __init__(self,dayarray,sday=False,eday=False,w0=1900.,h0=1200.,dpi=100.,sc=1.,goes=False,goesday=False,ace=False,aceadat=False,single=True,panel=False,color3=False,time_stamp=True):
+    def __init__(self,dayarray,sday=False,eday=False,w0=1900.,h0=1200.,dpi=100.,sc=1.,goes=False,goesday=False,ace=False,aceadat=False,single=True,panel=False,color3=False,time_stamp=True,odir='working/'):
 
         #check format of input day array
         if isinstance(dayarray,list):
@@ -91,13 +91,22 @@ class aia_mkimage:
             sys.stdout.write('timestamp must be a boolean')
             sys.exit(1)
 
-
+        #check output directory
+        if isinstance(odir,str):
+            self.odir = odir
+        else:
+            sys.stdout.write('odir must be a string')
+            sys.exit(1)
+ 
+        #format and create output directory
+        if self.odir[-1] != '/': self.odir=self.odir+'/'
+        if not os.path.isdir(self.odir): os.mkdir(self.odir)
      
 
         #check format of acedat Table if it exits 
         if isinstance(aceadat,Table):
             self.aceadat = aceadat
-        elif acedat == False:
+        elif aceadat == False:
             self.aceadat = [] #do not plot goes data
         else:
             sys.stdout.write('acedat must be a astropy table')
@@ -201,17 +210,15 @@ class aia_mkimage:
     
             #input fits file
             self.filep = self.dayarray
-            #output png file
-            outfi = self.filep.replace('raw','working').replace('fits','png')
-            test = os.path.isfile(outfi)
+          
         	
             #check image quality
-            check, img = qual_check(*self.filep)
+            check, img = self.qual_check()
            
             #return image wavelength
             if isinstance(img,list):
                 self.wav = []
-                img3d = np.zeros((comp[0].data.shape[0],comp[0].data.shape[0],3))
+                img3d = np.zeros((img[0].data.shape[0],img[0].data.shape[1],3))
                 for j,i in enumerate(img):
                     self.wav.append('{0:2.0f}'.format(i.wavelength.value))
                     #set normalized scaling for every observation
@@ -223,21 +230,27 @@ class aia_mkimage:
                     prelim[prelim < 0.] = 0.
                     prelim[prelim > 1.] = 1.
                     img3d[:,:,j] = prelim
+                #output png file
+                outfi = self.odir+'AIA_{0}_'.format(img[0].date.strftime('%Y%m%d_%H%M%S'))+'{0}_{1}_{2}.fits'.format(*self.wav)
             else:
                 #use default color tables
                 icmap = self.img_scale[self.wav][0]
                 ivmin = self.img_scale[self.wav][1]
                 ivmax = self.img_scale[self.wav][2]
                 self.wav ='{0:2.0f}'.format( img.wavelength.value)
+                outfi = self.odir+'AIA_{0}_'.format(img.date.strftime('%Y%m%d_%H%M%S'))+'{0}.fits'.format(self.wav)
+
+            #see if output file already exists
+            test = os.path.isfile(outfi)
         
         #test to see if png file already exists and passes quality tests
             if ((test == False) & (check)):
-                print 'Modifying file '+self.filep
-                self.fig,self.ax = plt.subplots(figsize=(self.sc*float(self.w0)/float(self.dpi),self.sc*float(self.h0)/float(self.dpi)))
-                self.fig.set_dpi(self.dpi)
-                self.fig.subplots_adjust(left=0,bottom=0,right=1,top=1)
-                self.fig.subplots_adjust(vspace=0.0001,hspace=0.0001)
-                self.ax.set_axis_off()
+                print 'Modifying file '+outfi
+                fig,ax = plt.subplots(figsize=(self.sc*float(self.w0)/float(self.dpi),self.sc*float(self.h0)/float(self.dpi)))
+                fig.set_dpi(self.dpi)
+                fig.subplots_adjust(left=0,bottom=0,right=1,top=1)
+                if self.panel: fig.subplots_adjust(vspace=0.0001,hspace=0.0001)
+                ax.set_axis_off()
         		# J. Prchlik 2016/10/06
         #Block add J. Prchlik (2016/10/06) to give physical coordinate values 
                 img = sunpy.map.Map(*self.filep)
@@ -355,18 +368,32 @@ class aia_mkimage:
     def qual_check(self):
     #read JPEG2000 file into sunpymap
         img = sunpy.map.Map(*self.filep)
+        check = True
     #Level0 quality flag equals 0 (0 means no issues)
-        lev0 = img.meta['quallev0'] == 0
-    #check level1 bitwise keywords (http://jsoc.stanford.edu/doc/keywords/AIA/AIA02840_K_AIA-SDO_FITS_Keyword_Document.pdf)
-        lev1 = np.binary_repr(img.meta['quality']) == '1000000000000000000000000000000'
-    #check that both levels pass and it is not a calibration file
-        check = ((lev0) & (lev1))# & (calb)) 
+        if isinstance(img,list):
+            #loop over all images
+            for i in img:
+                #exit if check ever fails
+                if check:
+                    lev0 = i.meta['quallev0'] == 0
+                #check level1 bitwise keywords (http://jsoc.stanford.edu/doc/keywords/AIA/AIA02840_K_AIA-SDO_FITS_Keyword_Document.pdf)
+                    lev1 = np.binary_repr(i.meta['quality']) == '1000000000000000000000000000000'
+                #check that both levels pass and it is not a calibration file
+                    check = ((lev0) & (lev1))# & (calb)) 
+                else: 
+                    continue
+        else:
+            lev0 = img.meta['quallev0'] == 0
+        #check level1 bitwise keywords (http://jsoc.stanford.edu/doc/keywords/AIA/AIA02840_K_AIA-SDO_FITS_Keyword_Document.pdf)
+            lev1 = np.binary_repr(img.meta['quality']) == '1000000000000000000000000000000'
+        #check that both levels pass and it is not a calibration file
+            check = ((lev0) & (lev1))# & (calb)) 
     
         return check,img
 
     #J. Prchlik 2016/10/11
     #Added to give physical coordinates
-    def img_extent(self):
+    def img_extent(self,img):
     # get the image coordinates in pixels
         px0 = img.meta['crpix1']
         py0 = img.meta['crpix2']
