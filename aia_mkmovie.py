@@ -57,6 +57,12 @@ class aia_mkimage:
         #check format of input day array
         if isinstance(dayarray,list):
             self.dayarray = dayarray
+            if len(dayarray) == 3: color3 = True: #automatically assume rgb creation if 3 
+            elif len(dayarray) == 1: color3 = False #force color 3 to be false if length 1 array
+            else:
+                sys.stdout.write('dayarray must be length 1 or 3')
+                sys.exit(1)
+        #if just a string turn the file string into a list
         elif isinstance(dayarray,str):
             self.dayarray = [dayarray]
         else:
@@ -76,6 +82,13 @@ class aia_mkimage:
             self.goes = goes
         else:
             sys.stdout.write('goes must be a boolean')
+            sys.exit(1)
+
+        #check if timestamp flag is set (Default = True)
+        if isinstance(time_stamp,bool): 
+            self.timestamp = goes
+        else:
+            sys.stdout.write('timestamp must be a boolean')
             sys.exit(1)
 
 
@@ -116,8 +129,7 @@ class aia_mkimage:
             self.goesday = [] #do not plot goes data
         else:
             sys.stdout.write('goesday must be a astropy table')
-        self.panel = panel
-        self.color3 = color3 
+
         #check image height
         if isinstance(h0,(int,float)):
             self.h0 = h0
@@ -134,7 +146,7 @@ class aia_mkimage:
 
  
         #check dpi
-        if isinstance(w0,(int,float)):
+        if isinstance(dpi,(int,float)):
             self.dpi = dpi
         else: 
             sys.stdout.write('dpi must be an integer or float')
@@ -172,15 +184,15 @@ class aia_mkimage:
 
 
         #Dictionary for vmax, vmin, and color
-        self.img_scale = {  '94':[cm.sdoaia94  ,70.,7500.],
-                           '131':[cm.sdoaia131 ,70.,7500.],
-                           '171':[cm.sdoaia171 ,70.,7500.],
-                           '193':[cm.sdoaia193 ,70.,7500.],
-                           '211':[cm.sdoaia211 ,70.,7500.],
-                           '304':[cm.sdoaia304 ,70.,7500.],
-                           '335':[cm.sdoaia335 ,70.,7500.],
-                          '1600':[cm.sdoaia1600,70.,7500.],
-                          '1700':[cm.sdoaia1700,70.,7500.]}
+        self.img_scale = {  '94':[cm.sdoaia94  ,np.arcsinh(70.),np.arcsinh(7500.)],
+                           '131':[cm.sdoaia131 ,np.arcsinh(70.),np.arcsinh(7500.)],
+                           '171':[cm.sdoaia171 ,np.arcsinh(70.),np.arcsinh(7500.)],
+                           '193':[cm.sdoaia193 ,np.arcsinh(70.),np.arcsinh(7500.)],
+                           '211':[cm.sdoaia211 ,np.arcsinh(70.),np.arcsinh(7500.)],
+                           '304':[cm.sdoaia304 ,np.arcsinh(70.),np.arcsinh(7500.)],
+                           '335':[cm.sdoaia335 ,np.arcsinh(70.),np.arcsinh(7500.)],
+                          '1600':[cm.sdoaia1600,np.arcsinh(70.),np.arcsinh(7500.)],
+                          '1700':[cm.sdoaia1700,np.arcsinh(70.),np.arcsinh(7500.)]}
 
 
     #for j,i in enumerate(dayarray):
@@ -188,16 +200,23 @@ class aia_mkimage:
     def format_img(self):
     
             #input fits file
-            filep = self.dayarray[i]
+            filep = self.dayarray
             #output png file
-            outfi = filep.replace('raw','working').replace#('fits','png')
+            outfi = filep.replace('raw','working').replace.('fits','png')
             test = os.path.isfile(outfi)
         	
-        #check image quality
+            #check image quality
+            check, img = qual_check(*filep)
+           
+            #return image wavelength
+            if isinstance(img,list):
+                self.wav = []
+                for i in img:
+                    self.wav.append('{0:2.0f}'.format( img.wavelength.value))
+            else:
+                self.wav ='{0:2.0f}'.format( img.wavelength.value)
         
-            check, img = qual_check(filep)
-        
-        #test to see if bmpfile exists
+        #test to see if png file already exists and passes quality tests
             if ((test == False) & (check)):
                 print 'Modifying file '+filep
                 self.fig,self.ax = plt.subplots(figsize=(self.sc*float(self.w0)/float(self.dpi),self.sc*float(self.h0)/float(self.dpi)))
@@ -205,26 +224,33 @@ class aia_mkimage:
                 self.fig.subplots_adjust(left=0,bottom=0,right=1,top=1)
                 self.fig.subplots_adjust(vspace=0.0001,hspace=0.0001)
                 self.ax.set_axis_off()
-                #ax.imshow(img.data,interpolation='none',cmap=cm.sdoaia193,vmin=0,vmax=255,origin='lower')
         		# J. Prchlik 2016/10/06
-                #Modified for fits files 
-        #        ax.imshow(np.arcsinh(img.data),interpolation='none',cmap=cm.sdoaia193,vmin=np.arcsinh(70.),vmax=np.arcsinh(7500.),origin='lower')
         #Block add J. Prchlik (2016/10/06) to give physical coordinate values 
-        #return extent of image
-                img = sunpy.map.Map(filep)
-                maxx,minx,maxy,miny = self.img_extent(img)
+                img = sunpy.map.Map(*filep,composite=self.color3)
+
+                #return extent of image
+                #use the first image in the list if it is a composite image to get the image boundaries
+                if isinstance(img,list):
+                    maxx,minx,maxy,miny = self.img_extent(img[0])
+                #else use the only image
+                else:
+                    maxx,minx,maxy,miny = self.img_extent(img)
 
 
                 #get plot parameters
-                icmap = self.img_scale[self.wav][0]
-                ivmin = self.img_scale[self.wav][1]
-                ivmax = self.img_scale[self.wav][2]
+                if self.color3:
+
+                #use default color tables
+                else:
+                    icmap = self.img_scale[self.wav][0]
+                    ivmin = self.img_scale[self.wav][1]
+                    ivmax = self.img_scale[self.wav][2]
 
         #plot the image in matplotlib
         #        ax.imshow(img.data,interpolation='none',cmap=cm.sdoaia193,vmin=0,vmax=255,origin='lower',extent=[minx,maxx,miny,maxy])
-                ax.imshow(np.arcsinh(img.data),interpolation='none',cmap=icmap,origin='lower',vmin=ivmin,vmax=np.arcsinh(7500.),extent=[minx,maxx,miny,maxy])
+                ax.imshow(np.arcsinh(img.data),interpolation='none',cmap=icmap,origin='lower',vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy])
         #        ax.set_axis_bgcolor('black')
-                ax.text(-2000,-1100,'AIA 193 - '+img.date.strftime('%Y/%m/%d - %H:%M:%S')+'Z',color='white',fontsize=36,zorder=50,fontweight='bold')
+                ax.text(-2000,-1100,'AIA {0} - {1}Z'.format(self.wav,img.date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=50,fontweight='bold')
                 if goes:
     #format string for date on xaxis
                     myFmt = mdates.DateFormatter('%m/%d')
@@ -317,9 +343,9 @@ class aia_mkimage:
     
     
     #for j,i in enumerate(dayarray):
-    def qual_check(filep):
+    def qual_check(self):
     #read JPEG2000 file into sunpymap
-        img = sunpy.map.Map(filep)
+        img = sunpy.map.Map(*self.filep)
     #Level0 quality flag equals 0 (0 means no issues)
         lev0 = img.meta['quallev0'] == 0
     #check level1 bitwise keywords (http://jsoc.stanford.edu/doc/keywords/AIA/AIA02840_K_AIA-SDO_FITS_Keyword_Document.pdf)
@@ -331,7 +357,7 @@ class aia_mkimage:
 
     #J. Prchlik 2016/10/11
     #Added to give physical coordinates
-    def img_extent(img):
+    def img_extent(self):
     # get the image coordinates in pixels
         px0 = img.meta['crpix1']
         py0 = img.meta['crpix2']
@@ -432,7 +458,7 @@ class aia_mkmovie:
 
  
         #check dpi
-        if isinstance(w0,(int,float)):
+        if isinstance(dpi,(int,float)):
             self.dpi = dpi
         else: 
             sys.stdout.write('dpi must be an integer or float')
