@@ -193,15 +193,15 @@ class aia_mkimage:
 
 
         #Dictionary for vmax, vmin, and color
-        self.img_scale = {  '94':[cm.sdoaia94  ,np.arcsinh(70.),np.arcsinh(7500.)],
-                           '131':[cm.sdoaia131 ,np.arcsinh(70.),np.arcsinh(7500.)],
-                           '171':[cm.sdoaia171 ,np.arcsinh(70.),np.arcsinh(7500.)],
-                           '193':[cm.sdoaia193 ,np.arcsinh(70.),np.arcsinh(7500.)],
-                           '211':[cm.sdoaia211 ,np.arcsinh(70.),np.arcsinh(7500.)],
-                           '304':[cm.sdoaia304 ,np.arcsinh(70.),np.arcsinh(7500.)],
-                           '335':[cm.sdoaia335 ,np.arcsinh(70.),np.arcsinh(7500.)],
-                          '1600':[cm.sdoaia1600,np.arcsinh(70.),np.arcsinh(7500.)],
-                          '1700':[cm.sdoaia1700,np.arcsinh(70.),np.arcsinh(7500.)]}
+        self.img_scale = {  '94':[cm.sdoaia94  ,np.arcsinh(0.001),np.arcsinh(150.)],
+                           '131':[cm.sdoaia131 ,np.arcsinh(0.001),np.arcsinh(500.)],
+                           '171':[cm.sdoaia171 ,np.arcsinh(10.),np.arcsinh(6000.)],
+                           '193':[cm.sdoaia193 ,np.arcsinh(0.001),np.arcsinh(8000.)],
+                           '211':[cm.sdoaia211 ,np.arcsinh(0.001),np.arcsinh(4000.)],
+                           '304':[cm.sdoaia304 ,np.arcsinh(1.),np.arcsinh(300.)],
+                           '335':[cm.sdoaia335 ,np.arcsinh(0.001),np.arcsinh(100.)],
+                          '1600':[cm.sdoaia1600,np.arcsinh(0.001),np.arcsinh(500.)],
+                          '1700':[cm.sdoaia1700,np.arcsinh(0.001),np.arcsinh(4000.)]}
 
 
     #for j,i in enumerate(dayarray):
@@ -231,14 +231,14 @@ class aia_mkimage:
                     prelim[prelim > 1.] = 1.
                     img3d[:,:,j] = prelim
                 #output png file
-                outfi = self.odir+'AIA_{0}_'.format(img[0].date.strftime('%Y%m%d_%H%M%S'))+'{0}_{1}_{2}.fits'.format(*self.wav)
+                outfi = self.odir+'AIA_{0}_'.format(img[0].date.strftime('%Y%m%d_%H%M%S'))+'{0}_{1}_{2}.png'.format(*self.wav)
             else:
+                self.wav ='{0:2.0f}'.format( img.wavelength.value)
                 #use default color tables
                 icmap = self.img_scale[self.wav][0]
                 ivmin = self.img_scale[self.wav][1]
                 ivmax = self.img_scale[self.wav][2]
-                self.wav ='{0:2.0f}'.format( img.wavelength.value)
-                outfi = self.odir+'AIA_{0}_'.format(img.date.strftime('%Y%m%d_%H%M%S'))+'{0}.fits'.format(self.wav)
+                outfi = self.odir+'AIA_{0}_'.format(img.date.strftime('%Y%m%d_%H%M%S'))+'{0}.png'.format(self.wav)
 
             #see if output file already exists
             test = os.path.isfile(outfi)
@@ -271,7 +271,7 @@ class aia_mkimage:
                 #use color composite image if color3 set
                 if self.color3:
                     ax.imshow(np.arcsinh(img3d),interpolation='none',origin='lower',extent=[minx,maxx,miny,maxy])
-                    ax.text(-2000,-1100,'AIA {2}/{1}/{0}'.format(*self.wav)+'- {1}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=50,fontweight='bold')
+                    ax.text(-2000,-1100,'AIA {2}/{1}/{0}'.format(*self.wav)+'- {0}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=50,fontweight='bold')
                 else:
                     ax.imshow(np.arcsinh(img.data),interpolation='none',cmap=icmap,origin='lower',vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy])
                     ax.text(-2000,-1100,'AIA {0} - {1}Z'.format(self.wav,img.date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=50,fontweight='bold')
@@ -358,7 +358,7 @@ class aia_mkimage:
                     acetop.xaxis.set_major_formatter(myFmt)
     
                     
-                fig.savefig(outfi,edgecolor='black',facecolor='black',dpi=dpi)
+                fig.savefig(outfi,edgecolor='black',facecolor='black',dpi=self.dpi)
                 plt.clf()
                 plt.close()
             return
