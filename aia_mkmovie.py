@@ -431,11 +431,22 @@ class aia_mkimage:
 class aia_mkmovie:
 
     #initialize aia_mkmovie
-    def __init__(start,end,wav,cadence='6m',h0=1900,w0=1144,dpi=300,usehv = False,panel=False,color3=False,select=False,videowall=True,nproc=2,goes=False,wind=False,x0=0.0,y0=0.0,archive="/data/SDO/AIA/synoptic/",dfmt = '%Y/%m/%d %H:%M:%S',outf=True,synoptic=True):
+    def __init__(start,end,wav,cadence='6m',h0=1900,w0=1144,dpi=300,usehv = False,panel=False,color3=False,select=False,videowall=True,nproc=2,goes=False,wind=False,x0=0.0,y0=0.0,archive="/data/SDO/AIA/synoptic/",dfmt = '%Y/%m/%d %H:%M:%S',outf=True,synoptic=True,odir='working/'):
 
 
         #list of acceptable wavelengths
         self.awavs = ['94','131','171','193','211','304','335','1600','1700']
+
+        #check output directory
+        if isinstance(odir,str):
+            self.odir = odir
+        else:
+            sys.stdout.write('odir must be a string')
+            sys.exit(1)
+ 
+        #format and create output directory
+        if self.odir[-1] != '/': self.odir=self.odir+'/'
+        if not os.path.isdir(self.odir): os.mkdir(self.odir)
 
         #use synoptic image checking (default = True)
         self.synoptic = synoptic
