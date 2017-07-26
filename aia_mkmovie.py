@@ -433,7 +433,7 @@ class aia_mkimage:
 class aia_mkmovie:
 
     #initialize aia_mkmovie
-    def __init__(start,end,wav,cadence='6m',h0=1900,w0=1144,dpi=300,usehv = False,panel=False,color3=False,select=False,videowall=True,nproc=2,goes=False,wind=False,x0=0.0,y0=0.0,archive="/data/SDO/AIA/synoptic/",dfmt = '%Y/%m/%d %H:%M:%S',outf=True,synoptic=True,odir='working/',frate=10):
+    def __init__(self,start,end,wav,cadence='6m',h0=1900,w0=1144,dpi=300,usehv = False,panel=False,color3=False,select=False,videowall=True,nproc=2,goes=False,wind=False,x0=0.0,y0=0.0,archive="/data/SDO/AIA/synoptic/",dfmt = '%Y/%m/%d %H:%M:%S',outf=True,synoptic=True,odir='working/',frate=10,time_stamp=True):
 
 
         #list of acceptable wavelengths
@@ -547,11 +547,19 @@ class aia_mkmovie:
          
         #create a goes plot
         self.goes = goes
+        if not goes: self.goesdat = []
         #create solar wind data plot
         self.wind = wind
+        if not wind: self.aceadat = []
         #automatically turn on goes plot if wind plot is set
         if self.wind: self.goes = True
 
+        #check if timestamp flag is set (Default = True)
+        if isinstance(time_stamp,bool): 
+            self.time_stamp = time_stamp
+        else:
+            sys.stdout.write('timestamp must be a boolean')
+            sys.exit(1)
 
         #Do not let panel and goes/wind plots work together
         if ((self.panel) & (self.goes)):
@@ -652,7 +660,7 @@ class aia_mkmovie:
 
 
         #scale up the images with increasing dpi
-        self.sc = dpi/100
+        self.sc = self.dpi/100
 
         self.span = (self.end-self.start).seconds #seconds to run the movie over
 
@@ -662,8 +670,8 @@ class aia_mkmovie:
         #create a directory which will contain the raw png files
         #sdir = stard+eday.date().strftime('%Y%m%d')
         #creating a subdirectory to extra step is not need
-        dirlist = [sdir,sdir+'/raw',sdir+'/working',sdir+'/working/symlinks',sdir+'/final',sdir+'/goes',sdir+'/ace']
-        for i in dirlist: self.creat_dir(i)
+        dirlist = [self.sdir,self.sdir+'/raw',self.sdir+'/working',self.sdir+'/working/symlinks',self.sdir+'/final',self.sdir+'/goes',self.sdir+'/ace']
+        for i in dirlist: self.create_dir(i)
 
         
 
@@ -712,7 +720,7 @@ class aia_mkmovie:
         #Updated version calls local files
         verbose=False
         debug = False
-        src = Scream(archive=archive,verbose=verbose,debug=debug)
+        src = Scream(archive=self.archive,verbose=verbose,debug=debug)
         ##########################################################
         # Phase 1: get file names                                #
         ##########################################################
@@ -720,22 +728,23 @@ class aia_mkmovie:
         paths = src.get_paths(date=self.end.strftime("%Y-%m-%d"), time=self.end.strftime("%H:%M:%S"),span=sendspan)
 
 
-        self.fits_files = []
         if self.single:
             fits_files = src.get_filelist(date=self.end.strftime("%Y-%m-%d"),time=self.end.strftime("%H:%M:%S"),span=sendspan,wavelnth=self.wav)
             qfls, qtms = src.run_quality_check(synoptic=self.synoptic)
-            self.fits_files.append(src.get_sample(files = qfls, sample = self.cadence, nfiles = 1))
+            self.fits_files = src.get_sample(files = qfls, sample = self.cadence, nfiles = 1)
         else:
+            self.fits_files = []
            #loop over all wavelengths in array
             for i in self.wav:
                 fits_files = src.get_filelist(date=self.end.strftime("%Y-%m-%d"),time=self.end.strftime("%H:%M:%S"),span=sendspan,wavelnth=i)
                 qfls, qtms = src.run_quality_check(synoptic=self.synoptic)
-                fits_files.append(src.get_sample(files = qfls, sample = self.cadence, nfiles = 1))
+                self.fits_files.append(src.get_sample(files = qfls, sample = self.cadence, nfiles = 1))
 
         for i in self.fits_files:
+            print i
             newfile = i.split('/')[-1]
             try:
-                os.symlink(i,sdir+'/raw/'+newfile)
+                os.symlink(i,self.sdir+'/raw/'+newfile)
             except OSError:
                 continue
         
@@ -743,15 +752,18 @@ class aia_mkmovie:
 
     def create_images_movie(self):
 
+
+        #create a list of class objects
+        image_list = [aia_mkimage(i,sday=False,eday=False,w0=self.w0,h0=self.h0,dpi=self.dpi,sc=self.sc,goes=self.goes,goesday=self.goesdat,
+                      ace=self.wind,aceadat=self.aceadat,single=self.single,panel=self.panel,color3=self.color3,time_stamp=self.time_stamp,odir='working/') for i in self.fits_files]
+
         #J. Prchlik 2016/10/06
         #Switched jp2 to fits
-        dayarray = glob.glob(self.sdir+'/raw/*fits')
-        forpool = np.arange(len(dayarray))
         #loop is for testing purposes
         #for i in forpool: format_img(i)
         if self.nproc > 1:
-            pool1 = Pool(processes=nproc)
-            outs = pool1.map(format_img,forpool)
+            pool1 = Pool(processes=self.nproc)
+            outs = pool1.map(format_img,image_list)
             pool1.close()
         #just loop is 1 processor specified
         else:
@@ -759,5 +771,21 @@ class aia_mkmovie:
 
 
         create_movie(odir = 'final/',pdir = self.odir, ext = 'png', w0 = self.w0, h0=self.h0,frate=self.frate,outmov=self.outf)
+
+    def run_all(self):
+        
+        self.gather_files()
+        self.create_images_movie()
+ 
+
+
+def format_img(aia_img):
+    aia_img.format_img()
+
+
+
+    
+
+
         
         
