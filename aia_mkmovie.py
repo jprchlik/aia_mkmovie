@@ -57,7 +57,7 @@ class aia_mkimage:
         #check format of input day array
         if isinstance(dayarray,list):
             self.dayarray = dayarray
-            if len(dayarray) == 3: color3 = True: #automatically assume rgb creation if 3 
+            if len(dayarray) == 3: color3 = True #automatically assume rgb creation if 3 
             elif len(dayarray) == 1: color3 = False #force color 3 to be false if length 1 array
             else:
                 sys.stdout.write('dayarray must be length 1 or 3')
@@ -153,7 +153,7 @@ class aia_mkimage:
             sys.exit(1)
 
         #check sc
-        if isinstance(w0,(int,float)):
+        if isinstance(sc,(int,float)):
             self.sc = sc
         else: 
             sys.stdout.write('sc must be an integer or float')
@@ -200,25 +200,39 @@ class aia_mkimage:
     def format_img(self):
     
             #input fits file
-            filep = self.dayarray
+            self.filep = self.dayarray
             #output png file
-            outfi = filep.replace('raw','working').replace.('fits','png')
+            outfi = self.filep.replace('raw','working').replace('fits','png')
             test = os.path.isfile(outfi)
         	
             #check image quality
-            check, img = qual_check(*filep)
+            check, img = qual_check(*self.filep)
            
             #return image wavelength
             if isinstance(img,list):
                 self.wav = []
-                for i in img:
-                    self.wav.append('{0:2.0f}'.format( img.wavelength.value))
+                img3d = np.zeros((comp[0].data.shape[0],comp[0].data.shape[0],3))
+                for j,i in enumerate(img):
+                    self.wav.append('{0:2.0f}'.format(i.wavelength.value))
+                    #set normalized scaling for every observation
+                    ivmin = self.img_scale[self.wav[j]][1]
+                    ivmax = self.img_scale[self.wav[j]][2]
+                    prelim = (np.arcsinh(i.data)-ivmin)/ivmax
+            
+                    #replace out of bounds points
+                    prelim[prelim < 0.] = 0.
+                    prelim[prelim > 1.] = 1.
+                    img3d[:,:,j] = prelim
             else:
+                #use default color tables
+                icmap = self.img_scale[self.wav][0]
+                ivmin = self.img_scale[self.wav][1]
+                ivmax = self.img_scale[self.wav][2]
                 self.wav ='{0:2.0f}'.format( img.wavelength.value)
         
         #test to see if png file already exists and passes quality tests
             if ((test == False) & (check)):
-                print 'Modifying file '+filep
+                print 'Modifying file '+self.filep
                 self.fig,self.ax = plt.subplots(figsize=(self.sc*float(self.w0)/float(self.dpi),self.sc*float(self.h0)/float(self.dpi)))
                 self.fig.set_dpi(self.dpi)
                 self.fig.subplots_adjust(left=0,bottom=0,right=1,top=1)
@@ -226,7 +240,7 @@ class aia_mkimage:
                 self.ax.set_axis_off()
         		# J. Prchlik 2016/10/06
         #Block add J. Prchlik (2016/10/06) to give physical coordinate values 
-                img = sunpy.map.Map(*filep,composite=self.color3)
+                img = sunpy.map.Map(*self.filep)
 
                 #return extent of image
                 #use the first image in the list if it is a composite image to get the image boundaries
@@ -237,28 +251,27 @@ class aia_mkimage:
                     maxx,minx,maxy,miny = self.img_extent(img)
 
 
-                #get plot parameters
-                if self.color3:
+                
 
-                #use default color tables
-                else:
-                    icmap = self.img_scale[self.wav][0]
-                    ivmin = self.img_scale[self.wav][1]
-                    ivmax = self.img_scale[self.wav][2]
 
         #plot the image in matplotlib
-        #        ax.imshow(img.data,interpolation='none',cmap=cm.sdoaia193,vmin=0,vmax=255,origin='lower',extent=[minx,maxx,miny,maxy])
-                ax.imshow(np.arcsinh(img.data),interpolation='none',cmap=icmap,origin='lower',vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy])
-        #        ax.set_axis_bgcolor('black')
-                ax.text(-2000,-1100,'AIA {0} - {1}Z'.format(self.wav,img.date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=50,fontweight='bold')
-                if goes:
+                #use color composite image if color3 set
+                if self.color3:
+                    ax.imshow(np.arcsinh(img3d),interpolation='none',origin='lower',extent=[minx,maxx,miny,maxy])
+                    ax.text(-2000,-1100,'AIA {2}/{1}/{0}'.format(*self.wav)+'- {1}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=50,fontweight='bold')
+                else:
+                    ax.imshow(np.arcsinh(img.data),interpolation='none',cmap=icmap,origin='lower',vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy])
+                    ax.text(-2000,-1100,'AIA {0} - {1}Z'.format(self.wav,img.date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=50,fontweight='bold')
+                if self.goes:
+                #use the first image for goes and ace plotting
+                    if isinstance(img,list): img = img[0] 
     #format string for date on xaxis
                     myFmt = mdates.DateFormatter('%m/%d')
     
     #only use goes data upto observed time
     
-                    use, = np.where((goesdat['time_dt'] < img.date+dt(minutes=150)) & (goesdat['Long'] > 0.0))
-                    clos,= np.where((goesdat['time_dt'] < img.date) & (goesdat['Long'] > 0.0))
+                    use, = np.where((self.goesdat['time_dt'] < img.date+dt(minutes=150)) & (self.goesdat['Long'] > 0.0))
+                    clos,= np.where((self.goesdat['time_dt'] < img.date) & (self.goesdat['Long'] > 0.0))
                     ingoes = inset_axes(ax,width="27%",height="20%",loc=7,borderpad=-27) #hack so it is outside normal boarders
                     ingoes.set_position(Bbox([[0.525,0.51],[1.5,1.48]]))
                     ingoes.set_facecolor('black')
@@ -274,16 +287,16 @@ class aia_mkimage:
                     ingoes.xaxis.set_major_formatter(myFmt)
     
                     ingoes.set_ylim([1.E-9,1.E-2])
-                    ingoes.set_xlim([sday,eday])
+                    ingoes.set_xlim([self.sday,self.eday])
                     ingoes.set_ylabel('X-ray Flux (1-8$\mathrm{\AA}$) [Watts m$^{-2}$]',color='white')
                     ingoes.set_xlabel('Universal Time',color='white')
-                    ingoes.plot(goesdat['time_dt'][use],goesdat['Long'][use],color='white')
-                    ingoes.scatter(goesdat['time_dt'][clos][-1],goesdat['Long'][clos][-1],color='red',s=10,zorder=1000)
+                    ingoes.plot(self.goesdat['time_dt'][use],self.goesdat['Long'][use],color='white')
+                    ingoes.scatter(self.goesdat['time_dt'][clos][-1],self.goesdat['Long'][clos][-1],color='red',s=10,zorder=1000)
                     ingoes.set_yscale('log')
     #plot ace information
                 if ((self.ace) & (self.goes)):
-                    use, = np.where((aceadat['time_dt'] < img.date+dt(minutes=150)) & (aceadat['S_1'] == 0.0) & (aceadat['S_2'] == 0) & (aceadat['Speed'] > -1000.))
-                    clos,= np.where((aceadat['time_dt'] < img.date) & (aceadat['S_1'] ==  0) & (aceadat['S_2'] == 0) & (aceadat['Speed'] > -1000))
+                    use, = np.where((self.aceadat['time_dt'] < img.date+dt(minutes=150)) & (self.aceadat['S_1'] == 0.0) & (self.aceadat['S_2'] == 0) & (self.aceadat['Speed'] > -1000.))
+                    clos,= np.where((self.aceadat['time_dt'] < img.date) & (self.aceadat['S_1'] ==  0) & (self.aceadat['S_2'] == 0) & (self.aceadat['Speed'] > -1000))
                     
                     acetop = inset_axes(ingoes,width='100%',height='100%',loc=9,borderpad=-27)
                     acebot = inset_axes(ingoes,width='100%',height='100%',loc=8,borderpad=-27)
@@ -313,8 +326,8 @@ class aia_mkimage:
                     acetop.set_ylim([0.,50.])
                     acebot.set_ylim([200.,1000.])
     
-                    acetop.set_xlim([sday,eday])
-                    acebot.set_xlim([sday,eday])
+                    acetop.set_xlim([self.sday,self.eday])
+                    acebot.set_xlim([self.sday,self.eday])
     
                     acetop.set_xlabel('Universal Time',color='white')
                     acebot.set_xlabel('Universal Time',color='white')
@@ -322,23 +335,19 @@ class aia_mkimage:
                     acetop.set_ylabel('B$_\mathrm{T}$ [nT]',color='white')
                     acebot.set_ylabel('Wind Speed [km/s]',color='white')
     
-                    acetop.plot(aceadat['time_dt'][use],aceadat['Bt'][use],color='white')
-                    acebot.plot(aceadat['time_dt'][use],aceadat['Speed'][use],color='white')
+                    acetop.plot(self.aceadat['time_dt'][use],self.aceadat['Bt'][use],color='white')
+                    acebot.plot(self.aceadat['time_dt'][use],self.aceadat['Speed'][use],color='white')
                     
-                    acetop.scatter(aceadat['time_dt'][clos][-1],aceadat['Bt'][clos][-1],color='red',s=10,zorder=1000)
-                    acebot.scatter(aceadat['time_dt'][clos][-1],aceadat['Speed'][clos][-1],color='red',s=10,zorder=1000)
+                    acetop.scatter(self.aceadat['time_dt'][clos][-1],self.aceadat['Bt'][clos][-1],color='red',s=10,zorder=1000)
+                    acebot.scatter(self.aceadat['time_dt'][clos][-1],self.aceadat['Speed'][clos][-1],color='red',s=10,zorder=1000)
                     
                     acebot.xaxis.set_major_formatter(myFmt)
                     acetop.xaxis.set_major_formatter(myFmt)
     
                     
-        ##        ax.set_axis_bgcolor('black')
-        #        ax.text(-1000,175,'AIA 193 - '+img.date.strftime('%Y/%m/%d - %H:%M:%S')+'Z',color='white',fontsize=36,zorder=50,fontweight='bold')
                 fig.savefig(outfi,edgecolor='black',facecolor='black',dpi=dpi)
                 plt.clf()
                 plt.close()
-    ##    except:
-    ##        print 'Unable to create {0}'.format(outfi)
             return
     
     
@@ -472,7 +481,7 @@ class aia_mkmovie:
         self.color3 = color3
         self.select = select
         #number of processors to use when creating images
-        if isinstance(nproc, int)
+        if isinstance(nproc, int):
             self.nproc = nproc
         else:
             sys.stdout.write('nproc must be an integer')
@@ -558,7 +567,7 @@ class aia_mkmovie:
 #create directories without erroring if they already exist c
     def create_dir(self,dirs):
         try:
-            os.mkdir(dirs):
+            os.mkdir(dirs)
         except OSError:
             sys.stdout.write('{0} Already Exists'.format(dirs))
 
