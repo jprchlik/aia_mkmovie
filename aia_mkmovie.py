@@ -545,10 +545,10 @@ class aia_mkmovie:
          
         #create a goes plot
         self.goes = goes
-        if not goes: self.goesdat =  Table()
+        if not goes: self.goesdat =  [] 
         #create solar wind data plot
         self.wind = wind
-        if not wind: self.aceadat = Table()
+        if not wind: self.aceadat = []     
         #automatically turn on goes plot if wind plot is set
         if self.wind: self.goes = True
 
@@ -631,7 +631,9 @@ class aia_mkmovie:
         #directory for file output
         wavapp = ''
         if len(self.wav) == 1: wavapp = '_{0}'.format(self.wav[0])
-        else: for i,j in enumerate(self.wav):  wavapp = wavapp+'_{0}'.format(j)
+        #loop over all wavelengths if there is more than 1 value in the list
+        else: 
+            for i,j in enumerate(self.wav):  wavapp = wavapp+'_{0}'.format(j)
         self.sdir = self.start.date().strftime('%Y%m%d_%H%M')+wavapp
 
 #create directories without erroring if they already exist c
@@ -745,7 +747,6 @@ class aia_mkmovie:
                 self.fits_files.append(src.get_sample(files = qfls, sample = self.cadence, nfiles = 1))
 
         for i in self.fits_files:
-            print i
             newfile = i.split('/')[-1]
             try:
                 os.symlink(i,self.sdir+'/raw/'+newfile)
@@ -771,10 +772,13 @@ class aia_mkmovie:
             pool1.close()
         #just loop is 1 processor specified
         else:
-            for i in forpool: format_img(i)
+            for i in image_list: format_img(i)
 
 
-        create_movie(odir = 'final/',pdir = self.sdir, ext = 'png', w0 = self.w0, h0=self.h0,frate=self.frate,outmov=self.outf)
+        #create movie object
+        mo =create_movie(odir = self.sdir+'/final/',pdir = self.sdir+'/working/', ext = 'png', w0 = self.w0, h0=self.h0,frate=self.frate,outmov=self.outf)
+        #run movie object
+        mo.create_movie()
 
     def run_all(self):
         
