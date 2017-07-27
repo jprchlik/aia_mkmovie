@@ -433,7 +433,7 @@ class aia_mkimage:
 class aia_mkmovie:
 
     #initialize aia_mkmovie
-    def __init__(self,start,end,wav,cadence='6m',h0=1900,w0=1144,dpi=300,usehv = False,panel=False,color3=False,select=False,videowall=True,nproc=2,goes=False,wind=False,x0=0.0,y0=0.0,archive="/data/SDO/AIA/synoptic/",dfmt = '%Y/%m/%d %H:%M:%S',outf=True,synoptic=True,odir='working/',frate=10,time_stamp=True):
+    def __init__(self,start,end,wav,cadence='6m',w0=1900,h0=1144,dpi=300,usehv = False,panel=False,color3=False,select=False,videowall=True,nproc=2,goes=False,wind=False,x0=0.0,y0=0.0,archive="/data/SDO/AIA/synoptic/",dfmt = '%Y/%m/%d %H:%M:%S',outf=True,synoptic=True,odir='working/',frate=10,time_stamp=True):
 
 
         #list of acceptable wavelengths
@@ -468,8 +468,6 @@ class aia_mkmovie:
         else:
             sys.stdout.write('Start time must be datetime object or formatted string')
 
-        #directory for file output
-        self.sdir = self.start.date().strftime('%Y%m%d_%H%M')
 
         #check output file
         if isinstance(outf,str):
@@ -547,10 +545,10 @@ class aia_mkmovie:
          
         #create a goes plot
         self.goes = goes
-        if not goes: self.goesdat = []
+        if not goes: self.goesdat =  Table()
         #create solar wind data plot
         self.wind = wind
-        if not wind: self.aceadat = []
+        if not wind: self.aceadat = Table()
         #automatically turn on goes plot if wind plot is set
         if self.wind: self.goes = True
 
@@ -580,8 +578,8 @@ class aia_mkmovie:
 
         #dimensions for videowall (over rides setting w0 and h0
         if videowall:
-            self.h0 = 1900
-            self.w0 = 1144
+            self.w0 = 1900
+            self.h0 = 1144
 
         #use a single wavelength
         self.single = False
@@ -630,6 +628,12 @@ class aia_mkmovie:
                 sys.exit(1)
    
 
+        #directory for file output
+        wavapp = ''
+        if len(self.wav) == 1: wavapp = '_{0}'.format(self.wav[0])
+        else: for i,j in enumerate(self.wav):  wavapp = wavapp+'_{0}'.format(j)
+        self.sdir = self.start.date().strftime('%Y%m%d_%H%M')+wavapp
+
 #create directories without erroring if they already exist c
     def create_dir(self,dirs):
         try:
@@ -645,7 +649,7 @@ class aia_mkmovie:
             from sunpy.net.helioviewer import HelioviewerClient
             import matplotlib.image as mpimg
             hv = HelioviewerClient()
-            dayarray = glob.glob(sdir+'/raw/*jp2')
+            dayarray = glob.glob(self.sdir+'/raw/*jp2')
             forpool = np.arange(len(dayarray))
             #for i in forpool: format_img(i)
             pool2 = Pool(processes=nproc)
@@ -677,8 +681,8 @@ class aia_mkmovie:
 
         #get all days in date time span
         if self.goes: 
-            ggxf.look_xrays(sday,now+dt(days=1),sdir)
-            goesfil = glob.glob(sdir+'/goes/*txt')
+            ggxf.look_xrays(sday,now+dt(days=1),self.sdir)
+            goesfil = glob.glob(self.sdir+'/goes/*txt')
             goesnames = [ 'YR', 'MO', 'DA', 'HHMM', 'JDay', 'Secs', 'Short', 'Long'] 
             self.goesdat = Table(names=goesnames)
         
@@ -755,7 +759,7 @@ class aia_mkmovie:
 
         #create a list of class objects
         image_list = [aia_mkimage(i,sday=False,eday=False,w0=self.w0,h0=self.h0,dpi=self.dpi,sc=self.sc,goes=self.goes,goesday=self.goesdat,
-                      ace=self.wind,aceadat=self.aceadat,single=self.single,panel=self.panel,color3=self.color3,time_stamp=self.time_stamp,odir='working/') for i in self.fits_files]
+                      ace=self.wind,aceadat=self.aceadat,single=self.single,panel=self.panel,color3=self.color3,time_stamp=self.time_stamp,odir=self.sdir+'/working/') for i in self.fits_files]
 
         #J. Prchlik 2016/10/06
         #Switched jp2 to fits
@@ -770,7 +774,7 @@ class aia_mkmovie:
             for i in forpool: format_img(i)
 
 
-        create_movie(odir = 'final/',pdir = self.odir, ext = 'png', w0 = self.w0, h0=self.h0,frate=self.frate,outmov=self.outf)
+        create_movie(odir = 'final/',pdir = self.sdir, ext = 'png', w0 = self.w0, h0=self.h0,frate=self.frate,outmov=self.outf)
 
     def run_all(self):
         
