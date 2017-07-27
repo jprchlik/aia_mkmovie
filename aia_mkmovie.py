@@ -341,14 +341,15 @@ class aia_mkmovie:
             qfls, qtms = src.run_quality_check(synoptic=self.synoptic)
             self.fits_files = src.get_sample(files = qfls, sample = self.cadence, nfiles = 1)
         else:
-            self.fits_files = []
+            self.fits_files_temp = []
            #loop over all wavelengths in array
-            print self.wav
             for i in self.wav:
                 print i
                 fits_files = src.get_filelist(date=self.end.strftime("%Y-%m-%d"),time=self.end.strftime("%H:%M:%S"),span=sendspan,wavelnth=i)
                 qfls, qtms = src.run_quality_check(synoptic=self.synoptic)
-                self.fits_files.append(src.get_sample(files = qfls, sample = self.cadence, nfiles = 1))
+                self.fits_files_temp.append(src.get_sample(files = qfls, sample = self.cadence, nfiles = 1))
+            #transpose list array
+            self.fits_files = map(list,zip(*self.fits_files_temp))
 
         for i in self.fits_files:
             newfile = i.split('/')[-1]
