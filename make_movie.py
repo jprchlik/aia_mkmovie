@@ -9,6 +9,9 @@ class create_movie:
 
     def __init__(self,odir='',pdir='track_plots/',ext='png',nproc=1,w0=1024,h0=1024,frate=10,outmov='movie.mp4'):
 
+        self.startd = os.getcwd()
+        #concert pdir into absolute path
+        pdir = os.path.abspath(pdir)
         if pdir[-1] != '/': pdir = pdir+'/'
         if odir == '': odir = os.getcwd()
         if odir[-1] != '/': odir = odir+'/'
@@ -56,14 +59,14 @@ class create_movie:
 #            raise   
 #use index to create formated symbolic links numerically increasing
     def create_links(self,index):
-        ifile = os.getcwd()+'/'+self.files[index]
+        ifile = self.files[index]
         os.symlink(ifile,'{0}/seq'.format(self.sdir)+self.sfmt.format(index).replace(' ','0'))
 
 
 #write ffmpeg to file
     def write_ffmpeg(self):
         com = open(self.odir+'run_ffmpeg.csh','w')
-        com.write('/usr/local/bin/ffmpeg -y -f image2 -r {2:2d} -i {5} -an -pix_fmt "yuv420p" -vcodec libx264 -level 41 -crf 18.0 -b 8192k -r {2:2d} -bufsize 8192k -maxrate 8192k -g 25 -coder 1 -profile main -preset faster -qdiff 4 -qcomp 0.7 -directpred 3 -flags +loop+mv4 -cmp +chroma -partitions +parti4x4+partp8x8+partb8x8 -subq 7 -me_range 16 -keyint_min 1 -sc_threshold 40 -i_qfactor 0.71 -rc_eq "blurCplx^(1-qComp)" -s "{0:4d}x{1:4d}" -b_strategy 1 -bidir_refine 1 -refs 6 -deblockalpha 0 -deblockbeta 0 -trellis 1 -x264opts keyint=25:min-keyint=1:bframes=1 -threads {4:1d} {3}\n'.format(self.w0,self.h0,self.frate,self.outmov,self.nproc,self.sdir+'/seq%'+self.lengs+'d.'+self.ext))
+        com.write('/usr/local/bin/ffmpeg -y -f image2 -r {2:2d} -i {5} -an -pix_fmt "yuv420p" -vcodec libx264 -level 41 -crf 18.0 -b 8192k -r {2:2d} -bufsize 8192k -maxrate 8192k -g 25 -coder 1 -profile main -preset faster -qdiff 4 -qcomp 0.7 -directpred 3 -flags +loop+mv4 -cmp +chroma -partitions +parti4x4+partp8x8+partb8x8 -subq 7 -me_range 16 -keyint_min 1 -sc_threshold 40 -i_qfactor 0.71 -rc_eq "blurCplx^(1-qComp)" -s "{0:4d}x{1:4d}" -b_strategy 1 -bidir_refine 1 -refs 6 -deblockalpha 0 -deblockbeta 0 -trellis 1 -x264opts keyint=25:min-keyint=1:bframes=1 -threads {4:1d} {3}\n'.format(self.w0,self.h0,self.frate,self.outmov,self.nproc,'../working/symlinks/seq%'+self.lengs+'d.'+self.ext))
         com.close()
 #Actually run ffmpeg
     def run_ffmpeg(self):
@@ -80,6 +83,7 @@ class create_movie:
         self.gather_files()
         self.write_ffmpeg()
         self.run_ffmpeg()
+        os.chdir(self.startd)
         
          
         
