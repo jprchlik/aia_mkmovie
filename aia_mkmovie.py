@@ -22,6 +22,9 @@ from astropy.table import vstack,Table,join
 
 from SMEARpy import Scream
 
+#import aia_mkimage
+from aia_mkimage import aia_mkimage
+
 
 #Class for making AIA movies
 class aia_mkmovie:
@@ -204,7 +207,7 @@ class aia_mkmovie:
         #check formatting assuming array
         elif isinstance(wav,(list,np.ndarray)):
             self.wav = []
-            for i in self.wav:
+            for i in wav:
                 if isinstance(i,(float,int)):
                     self.wav.append(str(int(i)))
                 elif isinstance(i,str):
@@ -213,7 +216,7 @@ class aia_mkmovie:
                     sys.stdout.write('Wavelengths must be string, floats, or integers')
                     sys.exit(1) 
                 #check to make sure wavelength is allowed
-                if i not in self.awavs:
+                if self.wav[-1] not in self.awavs:
                     sys.stdout.write('{0} not an acceptable wavelength'.format(i))
                     sys.exit(1)
 
@@ -224,7 +227,7 @@ class aia_mkmovie:
 
         #directory for file output
         wavapp = ''
-        if len(self.wav) == 1: wavapp = '_{0}'.format(self.wav[0])
+        if self.single: wavapp = '_{0}'.format(self.wav[0])
         #loop over all wavelengths if there is more than 1 value in the list
         else: 
             for i,j in enumerate(self.wav):  wavapp = wavapp+'_{0}'.format(j)
@@ -262,7 +265,7 @@ class aia_mkmovie:
         #scale up the images with increasing dpi
         self.sc = self.dpi/100
 
-        self.span = (self.end-self.start).seconds #seconds to run the movie over
+        self.span = (self.end-self.start).total_seconds() #seconds to run the movie over
 
 
 
@@ -324,10 +327,15 @@ class aia_mkmovie:
         ##########################################################
         # Phase 1: get file names                                #
         ##########################################################
+        print self.span
+        #if self.span > 7200.:
+        #    sendspan = "-{0:1.0f}m".format(self.span/60.+1.) # use minutes if greater than 7200 seconds
+        #else:
         sendspan = "-{0:1.0f}s".format(self.span) # need to spend current span not total span
         paths = src.get_paths(date=self.end.strftime("%Y-%m-%d"), time=self.end.strftime("%H:%M:%S"),span=sendspan)
 
 
+        #Singular search if only one wavelength specificied
         if self.single:
             fits_files = src.get_filelist(date=self.end.strftime("%Y-%m-%d"),time=self.end.strftime("%H:%M:%S"),span=sendspan,wavelnth=self.wav)
             qfls, qtms = src.run_quality_check(synoptic=self.synoptic)
@@ -335,7 +343,9 @@ class aia_mkmovie:
         else:
             self.fits_files = []
            #loop over all wavelengths in array
+            print self.wav
             for i in self.wav:
+                print i
                 fits_files = src.get_filelist(date=self.end.strftime("%Y-%m-%d"),time=self.end.strftime("%H:%M:%S"),span=sendspan,wavelnth=i)
                 qfls, qtms = src.run_quality_check(synoptic=self.synoptic)
                 self.fits_files.append(src.get_sample(files = qfls, sample = self.cadence, nfiles = 1))
