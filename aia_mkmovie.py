@@ -30,12 +30,15 @@ from aia_mkimage import aia_mkimage
 class aia_mkmovie:
 
     #initialize aia_mkmovie
-    def __init__(self,start,end,wav,cadence='6m',w0=1900,h0=1144,dpi=300,usehv = False,panel=False,color3=False,select=False,videowall=True,nproc=2,goes=False,wind=False,x0=0.0,y0=0.0,archive="/data/SDO/AIA/synoptic/",dfmt = '%Y/%m/%d %H:%M:%S',outf=True,synoptic=True,odir='working/',frate=10,time_stamp=True):
+    def __init__(self,start,end,wav,cadence='6m',w0=1900,h0=1144,dpi=300,usehv = False,panel=False,color3=False,select=False,videowall=True,nproc=2,goes=False,wind=False,x0=0.0,y0=0.0,archive="/data/SDO/AIA/synoptic/",dfmt = '%Y/%m/%d %H:%M:%S',outf=True,synoptic=True,odir='working/',frate=10,time_stamp=True,cx=0.0,cy=0.0,prompt=False,cutout=False):
         """ 
         Take 3 color input of R,G,B for wavelength
 
         """
 
+
+        #set to default scaling in aia_mkimage
+        self.img_scale = None
 
         #list of acceptable wavelengths
         self.awavs = ['94','131','171','193','211','304','335','1600','1700']
@@ -159,6 +162,21 @@ class aia_mkmovie:
         else:
             sys.stdout.write('timestamp must be a boolean')
             sys.exit(1)
+
+        #check if prompt flag is set (Default = True)
+        if isinstance(prompt,bool): 
+            self.prompt = prompt
+        else:
+            sys.stdout.write('prompt must be a boolean')
+            sys.exit(1)
+
+        #check if cutout flag is set (Default = True)
+        if isinstance(cutout,bool): 
+            self.cutout = cutout
+        else:
+            sys.stdout.write('cutout must be a boolean')
+            sys.exit(1)
+
 
         #Do not let panel and goes/wind plots work together
         if ((self.panel) & (self.goes)):
@@ -353,14 +371,41 @@ class aia_mkmovie:
             #transpose list array
             self.fits_files = map(list,zip(*self.fits_files_temp))
 
+
+    #prompt for selecting area
+    def init_promp(self):
+        #check the python version to use one Tkinter syntax or another
+        if sys.version_info[0] < 3:
+            import Tkinter as Tk
+        else:
+            import tkinter as Tk
+                import aia_select_cutout as asc
+
+        #init gui instance
+        gui = asc.gui_c(Tk.Tk(),self.fits_files,color3=self.color3,w0=self.w0,h0=self.h0,cx=self.cx,cy=self.cy,img_scale=self.img_scale)
+        #run the gui to select region
+        gui.mainloop()
+
+        #set parameters based on gui output
+        self.cx = gui.cx
+        self.cy = gui.cy
+        self.xbox = gui.xbox[:-1]
+        self.ybox = gui.ybox[:-1]
+
+        #use image scaling to pass to mkimage
+        self.img_scale=gui.img_scale
+   
+      
         
+        #set cutout to be true if prompt selected 
+        self.cutout = True
 
 
     def create_images_movie(self):
 
 
         #create a list of class objects
-        image_list = [aia_mkimage(i,w0=self.w0,h0=self.h0,dpi=self.dpi,sc=self.sc,goes=self.goes,goesdat=self.goesdat,sday=self.start,eday=self.end,
+        image_list = [aia_mkimage(i,w0=self.w0,h0=self.h0,dpi=self.dpi,sc=self.sc,goes=self.goes,goesdat=self.goesdat,sday=self.start,eday=self.end,img_scale=self.img_scale,cutout=self.cutout,
                       ace=self.wind,aceadat=self.aceadat,single=self.single,panel=self.panel,color3=self.color3,time_stamp=self.time_stamp,odir=self.sdir+'/working/') for i in self.fits_files]
 
         #J. Prchlik 2016/10/06
