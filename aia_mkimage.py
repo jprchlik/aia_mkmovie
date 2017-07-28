@@ -49,7 +49,7 @@ from astropy.table import vstack,Table,join
 
 class aia_mkimage:
 
-    def __init__(self,dayarray,sday=False,eday=False,w0=1900.,h0=1200.,dpi=100.,sc=1.,goes=False,goesdat=False,ace=False,aceadat=False,single=True,panel=False,color3=False,time_stamp=True,odir='working/',cutout=False,img_scale=None):
+    def __init__(self,dayarray,sday=False,eday=False,w0=1900.,h0=1200.,dpi=100.,sc=1.,goes=False,goesdat=False,ace=False,aceadat=False,single=True,panel=False,color3=False,time_stamp=True,odir='working/',cutout=False,img_scale=None,cx=0.,cy=0.,xlim=None,ylim=None):
 
         """
         Day array if 3 color goes in as RGB
@@ -101,7 +101,22 @@ class aia_mkimage:
         #format and create output directory
         if self.odir[-1] != '/': self.odir=self.odir+'/'
         if not os.path.isdir(self.odir): os.mkdir(self.odir)
-     
+  
+
+        #check image x center
+        if isinstance(cx,(int,float)):
+            self.cx = cx
+        else:
+            sys.stdout.write('cx must be an integer or float (Assuming 0)')
+            self.cx = 0.0
+        
+        #check image y center
+        if isinstance(cy,(int,float)):
+            self.cy = cy
+        else:
+            sys.stdout.write('cy must be an integer or float (Assuming 0)')
+            self.cy = 0.0     
+
 
         #check format of acedat Table if it exits 
         if isinstance(aceadat,Table):
@@ -156,7 +171,7 @@ class aia_mkimage:
             sys.stdout.write('w0 must be an integer or float')
             sys.exit(1)
 
-       #check if cutout flag is set (Default = True)
+       #check if cutout flag is set (Default = False)
         if isinstance(cutout,bool):
             self.cutout = cutout
         else:
@@ -219,6 +234,26 @@ class aia_mkimage:
         else:
             sys.stdout.write('img_scale must be a dictionary with color map, min value, max value')
             sys.exit(1)
+
+
+        #check proposed x and y limits
+        if ((xlim is None) & (ylim is None)):
+            self.cutout = False
+        #make sure 
+        elif ((xlim is not None) & (isinstance(xlim,(np.ndarray,list)))):
+            for i in xlim:
+                if not isinstance(i,(float,int)):
+                    sys.stdout.write('Individual x values must be float or int')
+                    break
+            
+        elif ((ylim is not None) & (isinstance(ylim,(np.ndarray,list)))):
+            for i in ylim:
+                if not isinstance(i,(float,int)):
+                    sys.stdout.write('Individual y values must be float or int')
+                    break
+        else: 
+            sys.stdout.write('X and Y limits must be empty, lists, or numpy arrays')
+            break
 
 
 
@@ -286,13 +321,13 @@ class aia_mkimage:
                 
 
                 #set text location
-                if self.w0 > self.h0:
+                if ((self.w0 > self.h0) & (not self.cutout)):
                     txtx = -(self.w0-self.h0)
                     txty = (maxy-miny)*0.01
-                elif self.w0 < self.h0:
+                elif ((self.w0 < self.h0) & (not self.cutout)):
                     txty = -(self.h0-self.w0)
                     txtx = (maxx-minx)*0.01
-                if self.w0 == self.h0:
+                elif ((self.w0 == self.h0) | (self.cutout)):
                     txtx = (maxx-minx)*0.01
                     txty = (maxy-miny)*0.01
 
@@ -304,6 +339,12 @@ class aia_mkimage:
                 else:
                     ax.imshow(np.arcsinh(img.data),interpolation='none',cmap=icmap,origin='lower',vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy])
                     ax.text(minx+txtx,miny+txty,'AIA {0} - {1}Z'.format(self.wav,img.date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=50,fontweight='bold')
+                #set limits for cutout
+                if cutout:
+                    ax.set_xlim(self.xlim)
+                    ax.set_ylim(self.ylim)
+
+
                 if self.goes:
                 #use the first image for goes and ace plotting
                     if isinstance(img,list): img = img[0] 
