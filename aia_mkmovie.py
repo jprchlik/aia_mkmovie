@@ -2,10 +2,14 @@ __version__ = "0.0.1 (2017/07/24)"
 __authors__ = ['Jakub Prchlik <jakub.prchlik@cfa.harvard.edu>']
 __email__   = "jakub.prchlik@cfa.harvard.edu"
 
+import matplotlib
+#fixes multiprocess issue
+matplotlib.use('Tkagg')
 
 import sys
 
 from make_movie import create_movie
+
 
 import subprocess
 import glob
@@ -39,6 +43,10 @@ class aia_mkmovie:
 
         #set to default scaling in aia_mkimage
         self.img_scale = None
+     
+        #No default x or y limits
+        self.xlim = None
+        self.ylim = None
 
         #list of acceptable wavelengths
         self.awavs = ['94','131','171','193','211','304','335','1600','1700']
@@ -185,6 +193,23 @@ class aia_mkmovie:
 
 
 
+        #check image x center
+        if isinstance(cx,(int,float)):
+            self.cx = cx
+        else:
+            sys.stdout.write('cx must be an integer or float (Assuming 0)')
+            self.cx = 0.0
+
+        #check image y center
+        if isinstance(cy,(int,float)):
+            self.cy = cy
+        else:
+            sys.stdout.write('cy must be an integer or float (Assuming 0)')
+            self.cy = 0.0
+
+
+
+
         #location of SDO files
         if isinstance(archive,str):
             #make sure archive string ends in /
@@ -247,9 +272,11 @@ class aia_mkmovie:
                 sys.exit(1)
    
 
+        print self.single
+        print self.wav
         #directory for file output
         wavapp = ''
-        if self.single: wavapp = '_{0}'.format(self.wav[0])
+        if self.single: wavapp = '_{0}'.format(self.wav)
         #loop over all wavelengths if there is more than 1 value in the list
         else: 
             for i,j in enumerate(self.wav):  wavapp = wavapp+'_{0}'.format(j)
@@ -343,8 +370,8 @@ class aia_mkmovie:
 
         #J. Prchlik 2016/10/06
         #Updated version calls local files
-        verbose=False
-        debug = False
+        verbose=False 
+        debug = False 
         src = Scream(archive=self.archive,verbose=verbose,debug=debug)
         ##########################################################
         # Phase 1: get file names                                #
@@ -360,26 +387,34 @@ class aia_mkmovie:
         if self.single:
             fits_files = src.get_filelist(date=self.end.strftime("%Y-%m-%d"),time=self.end.strftime("%H:%M:%S"),span=sendspan,wavelnth=self.wav)
             qfls, qtms = src.run_quality_check(synoptic=self.synoptic)
-            self.fits_files = src.get_sample(files = qfls, sample = self.cadence, nfiles = 1)
-        elif color3:
+            if len(qfls) < 1.:
+                sys.stdout.write('No AIA Files Found')
+                sys.exit(1)
+            else:
+                self.fits_files = src.get_sample(files = qfls, sample = self.cadence, nfiles = 1)
+        elif self.color3:
             self.fits_files_temp = []
            #loop over all wavelengths in array
             for i in self.wav:
                 fits_files = src.get_filelist(date=self.end.strftime("%Y-%m-%d"),time=self.end.strftime("%H:%M:%S"),span=sendspan,wavelnth=i)
                 qfls, qtms = src.run_quality_check(synoptic=self.synoptic)
-                self.fits_files_temp.append(src.get_sample(files = qfls, sample = self.cadence, nfiles = 1))
+                if len(qfls) < 1.:
+                    sys.stdout.write('No AIA Files Found')
+                    sys.exit(1)
+                else:
+                    self.fits_files_temp.append(src.get_sample(files = qfls, sample = self.cadence, nfiles = 1))
             #transpose list array
             self.fits_files = map(list,zip(*self.fits_files_temp))
 
 
     #prompt for selecting area
-    def init_promp(self):
+    def init_prompt(self):
         #check the python version to use one Tkinter syntax or another
         if sys.version_info[0] < 3:
             import Tkinter as Tk
         else:
             import tkinter as Tk
-                import aia_select_cutout as asc
+        import aia_select_cutout as asc
 
         #init gui instance
         gui = asc.gui_c(Tk.Tk(),self.fits_files,color3=self.color3,w0=self.w0,h0=self.h0,cx=self.cx,cy=self.cy,img_scale=self.img_scale)
@@ -394,8 +429,6 @@ class aia_mkmovie:
 
         #use image scaling to pass to mkimage
         self.img_scale=gui.img_scale
-   
-      
         
         #set cutout to be true if prompt selected 
         self.cutout = True
@@ -405,9 +438,12 @@ class aia_mkmovie:
 
 
         #create a list of class objects
-        image_list = [aia_mkimage(i,w0=self.w0,h0=self.h0,dpi=self.dpi,sc=self.sc,goes=self.goes,goesdat=self.goesdat,sday=self.start,eday=self.end,img_scale=self.img_scale,cutout=self.cutout,
-                      ace=self.wind,aceadat=self.aceadat,single=self.single,panel=self.panel,color3=self.color3,time_stamp=self.time_stamp,odir=self.sdir+'/working/') ,
-                      xlim=self.xlim,ylim=self.ylim for i in self.fits_files]
+        image_list = [aia_mkimage(i,w0=self.w0,h0=self.h0,dpi=self.dpi,
+                      sc=self.sc,goes=self.goes,goesdat=self.goesdat,sday=self.start,eday=self.end,
+                      img_scale=self.img_scale,cutout=self.cutout,
+                      ace=self.wind,aceadat=self.aceadat,single=self.single,panel=self.panel,
+                      color3=self.color3,time_stamp=self.time_stamp,odir=self.sdir+'/working/',
+                      xlim=self.xlim,ylim=self.ylim) for i in self.fits_files]
 
         #J. Prchlik 2016/10/06
         #Switched jp2 to fits
@@ -430,6 +466,7 @@ class aia_mkmovie:
     def run_all(self):
         
         self.gather_files()
+        if self.prompt: self.init_prompt()
         self.create_images_movie()
  
 
