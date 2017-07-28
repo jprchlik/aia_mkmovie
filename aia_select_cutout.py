@@ -44,6 +44,7 @@ class gui_c(Tk.Frame):
         #get maximum value in list
         self.ordermax = len(flist)-1
 
+        #create parent variable
         self.parent = parent
         self.w0 = w0
         self.h0 = h0
@@ -52,6 +53,8 @@ class gui_c(Tk.Frame):
 
         #clicked point on the figure
         self.clicked = False
+        #first clicked point on the figure
+        self.firstclick = False
 
         #Dictionary for vmax, vmin, and color
         self.img_scale = {'0094':[cm.sdoaia94  ,np.arcsinh(1.),np.arcsinh(150.)],
@@ -88,6 +91,8 @@ class gui_c(Tk.Frame):
 #Separate the two plotting windows
         self.x = self.a[1]
         self.a = self.a[0]
+        #turn off clicked axis for starters
+        self.x.set_axis_off()
  
 #Create window for the plot
         self.canvas = FigureCanvasTkAgg(self.f,master=self)
@@ -142,24 +147,24 @@ class gui_c(Tk.Frame):
         quitButton = Tk.Button(self,text="Quit",command=self.onExit)
         quitButton.pack(side=Tk.RIGHT,padx=5,pady=5)
 
-#set up center x box
+#set up center width box
         w0Text = Tk.StringVar()
         w0Text.set("Width (pixels)")
         w0Dir = Tk.Label(self,textvariable=w0Text,height=4)
         w0Dir.pack(side=Tk.LEFT)
-#Add so center x can be updated
+#Add so width can be updated
         w0 = Tk.StringVar()
         w0.set('{0:5.2f}'.format(self.w0))
         self.w0val = Tk.Entry(self,textvariable=w0,width=10)
         self.w0val.bind("<Return>",self.aia_param)
         self.w0val.pack(side=Tk.LEFT,padx=5,pady=5)
        
-#set up center w0 box
+#set up center h0 box
         h0Text = Tk.StringVar()
         h0Text.set("Height (pixels)")
         h0Dir = Tk.Label(self,textvariable=h0Text,height=4)
         h0Dir.pack(side=Tk.LEFT)
-#Add so center h0 can be updated
+#Add so center height can be updated
         h0 = Tk.StringVar()
         h0.set('{0:5.2f}'.format(self.h0))
         self.h0val = Tk.Entry(self,textvariable=h0,width=10)
@@ -199,9 +204,33 @@ class gui_c(Tk.Frame):
 #Add so order number can be updated
         self.sorder = Tk.StringVar()
         self.sorder.set(str(int(self.order)))
-        self.orderval = Tk.Entry(self,textvariable=self.sorder,width=10)
+        self.orderval = Tk.Entry(self,textvariable=self.sorder,width=5)
         self.orderval.bind("<Return>",self.on_order_box)
         self.orderval.pack(side=Tk.LEFT,padx=5,pady=5)
+       
+#set up Color Min
+        cminText = Tk.StringVar()
+        cminText.set("Color Min.")
+        cminDir = Tk.Label(self,textvariable=cminText,height=4)
+        cminDir.pack(side=Tk.RIGHT)
+#Add so Color Min can be updated
+        self.cmin = Tk.StringVar()
+        self.cmin.set('{0:5.2f}'.format(0))
+        self.cminval = Tk.Entry(self,textvariable=self.cmin,width=10)
+        self.cminval.bind("<Return>",self.aia_param)
+        self.cminval.pack(side=Tk.RIGHT,padx=5,pady=5)
+       
+#set up Color Max 
+        cmaxText = Tk.StringVar()
+        cmaxText.set("Color Max.")
+        cmaxDir = Tk.Label(self,textvariable=cmaxText,height=4)
+        cmaxDir.pack(side=Tk.RIGHT)
+#Add so Color Max can be updated
+        self.cmax = Tk.StringVar()
+        self.cmax.set('{0:5.2f}'.format(0))
+        self.cmaxval = Tk.Entry(self,textvariable=self.cmax,width=10)
+        self.cmaxval.bind("<Return>",self.aia_param)
+        self.cmaxval.pack(side=Tk.RIGHT,padx=5,pady=5)
        
 #set up Submenu
         menubar = Tk.Menu(self.parent)
@@ -225,6 +254,12 @@ class gui_c(Tk.Frame):
             self.w0 = float(self.w0val.get())
             self.cx = float(self.cxval.get())
             self.cy = float(self.cyval.get())
+            #update the color parameters
+            self.ivmin = float(self.cminval.get())
+            self.ivmax = float(self.cmaxval.get())
+            self.img_scale[self.wav][1] = self.ivmin
+            self.img_scale[self.wav][2] = self.ivmax
+            #
         #now replot
             self.clicked = True
             self.sub_window()
@@ -276,6 +311,9 @@ class gui_c(Tk.Frame):
        self.icmap = self.img_scale[self.wav][0]
        self.ivmin = self.img_scale[self.wav][1]
        self.ivmax = self.img_scale[self.wav][2]
+       #set the string value in the plot window
+       self.cmin.set('{0:9.3}'.format(self.ivmin))
+       self.cmax.set('{0:9.3}'.format(self.ivmax))
 
 
 #plot the current AIA image
@@ -285,6 +323,8 @@ class gui_c(Tk.Frame):
        self.a.set_xlabel('Arcseconds')
        self.a.set_ylabel('Arcseconds')
        if self.clicked:
+           #make sure axis is on if not turn it on
+           if not self.x.get_frame_on(): self.x.set_axis_on()
            #Show the clicked region in a separate plot
            self.x.clear()
            self.x.imshow(self.data0,interpolation='none',cmap=self.icmap,origin='lower',vmin=self.ivmin,vmax=self.ivmax,extent=[self.minx,self.maxx,self.miny,self.maxy])
@@ -347,6 +387,8 @@ class gui_c(Tk.Frame):
             self.cy = click.ydata
 
 
+            #tell if the plot has beeen clicked at least once
+            self.firstclick = True
             #tell the plot its been clicked
             self.clicked = True
 
