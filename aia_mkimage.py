@@ -29,27 +29,12 @@ from astropy.io import ascii
 from astropy.table import vstack,Table,join
 
 
-#import hv download (probably wont do)
-####def get_file(ind):
-#####Source ID 11 is AIA 193
-#####    fils = ind.replace(':','_').replace('/','_').replace(' ','_')+'_AIA_193.jp2'
-####    meta = hv.get_closest_image(ind,sourceId=11)
-####    date = meta['date'].strftime('%Y_%m_%d__%H_%M_%S')
-####    mils = float(meta['date'].strftime('%f'))/1000.
-####    fstr = date+'_*__SDO_AIA_AIA_193.jp2'.format(mils).replace(' ','0')
-#####    test = os.path.isfile(sdir+'/raw/'+fstr)
-####    test = glob.glob(sdir+'/raw/'+fstr)
-####    if len(test) == 0:
-#####        filep = hv.download_png(ind,0.3,"[11,1,100]",directory=sdir+'/raw',x0=0,y0=0,width=int(rv*8192),height=8192,watermark=False)#,y1=-1200,y2=1200,x1=-1900,x2=1900)
-####        filep = hv.download_jp2(ind,sourceId="11",directory=sdir+'/raw',clobber=True)#,y1=-1200,y2=1200,x1=-1900,x2=1900)
-####
-
-
-
-
 class aia_mkimage:
 
-    def __init__(self,dayarray,sday=False,eday=False,w0=1900.,h0=1200.,dpi=100.,sc=1.,goes=False,goesdat=False,ace=False,aceadat=False,single=True,panel=False,color3=False,time_stamp=True,odir='working/',cutout=False,img_scale=None,cx=0.,cy=0.,xlim=None,ylim=None):
+    def __init__(self,dayarray,sday=False,eday=False,w0=1900.,h0=1200.,dpi=100.,sc=1.,
+                 goes=False,goesdat=False,ace=False,aceadat=False,single=True,panel=False,
+                 color3=False,time_stamp=True,odir='working/',cutout=False,
+                 img_scale=None,cx=0.,cy=0.,xlim=None,ylim=None):
 
         """
         Day array if 3 color goes in as RGB
@@ -234,26 +219,30 @@ class aia_mkimage:
         else:
             sys.stdout.write('img_scale must be a dictionary with color map, min value, max value')
             sys.exit(1)
+    
 
 
         #check proposed x and y limits
         if ((xlim is None) & (ylim is None)):
             self.cutout = False
         #make sure 
-        elif ((xlim is not None) & (isinstance(xlim,(np.ndarray,list)))):
+        elif ((xlim is not None) & (isinstance(xlim,(np.ndarray,list))) & (ylim is not None) & (isinstance(ylim,(np.ndarray,list)))):
             for i in xlim:
                 if not isinstance(i,(float,int)):
                     sys.stdout.write('Individual x values must be float or int')
-                    break
-            
-        elif ((ylim is not None) & (isinstance(ylim,(np.ndarray,list)))):
+                    sys.exit(1)
+            #if passes set xlim
+            self.xlim = xlim
+
             for i in ylim:
                 if not isinstance(i,(float,int)):
                     sys.stdout.write('Individual y values must be float or int')
-                    break
+                    sys.exit(1)
+            #if passes set ylim
+            self.ylim = ylim
         else: 
             sys.stdout.write('X and Y limits must be empty, lists, or numpy arrays')
-            break
+            sys.exit(1)
 
 
 
@@ -327,9 +316,12 @@ class aia_mkimage:
                 elif ((self.w0 < self.h0) & (not self.cutout)):
                     txty = -(self.h0-self.w0)
                     txtx = (maxx-minx)*0.01
-                elif ((self.w0 == self.h0) | (self.cutout)):
+                elif ((self.w0 == self.h0) & (not self.cutout)):
                     txtx = (maxx-minx)*0.01
                     txty = (maxy-miny)*0.01
+                elif (self.cutout):
+                    txtx = (max(self.xlim)-min(self.xlim))*0.01+(min(self.xlim)-minx)
+                    txty = (max(self.ylim)-min(self.ylim))*0.01+(min(self.ylim)-miny)
 
         #plot the image in matplotlib
                 #use color composite image if color3 set
@@ -340,7 +332,7 @@ class aia_mkimage:
                     ax.imshow(np.arcsinh(img.data),interpolation='none',cmap=icmap,origin='lower',vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy])
                     ax.text(minx+txtx,miny+txty,'AIA {0} - {1}Z'.format(self.wav,img.date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=50,fontweight='bold')
                 #set limits for cutout
-                if cutout:
+                if self.cutout:
                     ax.set_xlim(self.xlim)
                     ax.set_ylim(self.ylim)
 
