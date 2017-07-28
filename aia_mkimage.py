@@ -49,7 +49,7 @@ from astropy.table import vstack,Table,join
 
 class aia_mkimage:
 
-    def __init__(self,dayarray,sday=False,eday=False,w0=1900.,h0=1200.,dpi=100.,sc=1.,goes=False,goesdat=False,ace=False,aceadat=False,single=True,panel=False,color3=False,time_stamp=True,odir='working/'):
+    def __init__(self,dayarray,sday=False,eday=False,w0=1900.,h0=1200.,dpi=100.,sc=1.,goes=False,goesdat=False,ace=False,aceadat=False,single=True,panel=False,color3=False,time_stamp=True,odir='working/',cutout=False,img_scale=None):
 
         """
         Day array if 3 color goes in as RGB
@@ -156,6 +156,14 @@ class aia_mkimage:
             sys.stdout.write('w0 must be an integer or float')
             sys.exit(1)
 
+       #check if cutout flag is set (Default = True)
+        if isinstance(cutout,bool):
+            self.cutout = cutout
+        else:
+            sys.stdout.write('cutout must be a boolean')
+            sys.exit(1)
+
+
  
         #check dpi
         if isinstance(dpi,(int,float)):
@@ -196,25 +204,22 @@ class aia_mkimage:
 
 
         #Dictionary for vmax, vmin, and color
-        self.img_scale = {'0094':[cm.sdoaia94  ,np.arcsinh(1.),np.arcsinh(150.)],
-                          '0131':[cm.sdoaia131 ,np.arcsinh(1.),np.arcsinh(500.)],
-                          '0171':[cm.sdoaia171 ,np.arcsinh(10.),np.arcsinh(6000.)],
-                          '0193':[cm.sdoaia193 ,np.arcsinh(10.),np.arcsinh(8000.)],
-                          '0211':[cm.sdoaia211 ,np.arcsinh(10.),np.arcsinh(4000.)],
-                          '0304':[cm.sdoaia304 ,np.arcsinh(1.),np.arcsinh(300.)],
-                          '0335':[cm.sdoaia335 ,np.arcsinh(1.),np.arcsinh(100.)],
-                          '1600':[cm.sdoaia1600,np.arcsinh(20.),np.arcsinh(500.)],
-                          '1700':[cm.sdoaia1700,np.arcsinh(200.),np.arcsinh(4000.)]}
-        #Dictionary for vmax, vmin, and color
-        self.img_scale = {'0094':[cm.sdoaia94  ,np.arcsinh(1.),np.arcsinh(150.)],
-                          '0131':[cm.sdoaia131 ,np.arcsinh(1.),np.arcsinh(500.)],
-                          '0171':[cm.sdoaia171 ,np.arcsinh(10.),np.arcsinh(2500.)],
-                          '0193':[cm.sdoaia193 ,np.arcsinh(10.),np.arcsinh(4500.)],
-                          '0211':[cm.sdoaia211 ,np.arcsinh(10.),np.arcsinh(4000.)],
-                          '0304':[cm.sdoaia304 ,np.arcsinh(2.),np.arcsinh(300.)],
-                          '0335':[cm.sdoaia335 ,np.arcsinh(1.),np.arcsinh(100.)],
-                          '1600':[cm.sdoaia1600,np.arcsinh(20.),np.arcsinh(500.)],
-                          '1700':[cm.sdoaia1700,np.arcsinh(200.),np.arcsinh(4000.)]}
+        if img_scale is None:
+            self.img_scale = {'0094':[cm.sdoaia94  ,np.arcsinh(1.),np.arcsinh(150.)],
+                              '0131':[cm.sdoaia131 ,np.arcsinh(1.),np.arcsinh(500.)],
+                              '0171':[cm.sdoaia171 ,np.arcsinh(10.),np.arcsinh(2500.)],
+                              '0193':[cm.sdoaia193 ,np.arcsinh(100.),np.arcsinh(4500.)],
+                              '0211':[cm.sdoaia211 ,np.arcsinh(10.),np.arcsinh(4000.)],
+                              '0304':[cm.sdoaia304 ,np.arcsinh(2.),np.arcsinh(300.)],
+                              '0335':[cm.sdoaia335 ,np.arcsinh(1.),np.arcsinh(100.)],
+                              '1600':[cm.sdoaia1600,np.arcsinh(20.),np.arcsinh(500.)],
+                              '1700':[cm.sdoaia1700,np.arcsinh(200.),np.arcsinh(4000.)]}
+        elif isinstance(img_scale,dict):
+            self.img_scale = img_scale
+        else:
+            sys.stdout.write('img_scale must be a dictionary with color map, min value, max value')
+            sys.exit(1)
+
 
 
     #for j,i in enumerate(dayarray):
