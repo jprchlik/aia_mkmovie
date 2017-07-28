@@ -31,6 +31,10 @@ class aia_mkmovie:
 
     #initialize aia_mkmovie
     def __init__(self,start,end,wav,cadence='6m',w0=1900,h0=1144,dpi=300,usehv = False,panel=False,color3=False,select=False,videowall=True,nproc=2,goes=False,wind=False,x0=0.0,y0=0.0,archive="/data/SDO/AIA/synoptic/",dfmt = '%Y/%m/%d %H:%M:%S',outf=True,synoptic=True,odir='working/',frate=10,time_stamp=True):
+        """ 
+        Take 3 color input of R,G,B for wavelength
+
+        """
 
 
         #list of acceptable wavelengths
@@ -327,7 +331,6 @@ class aia_mkmovie:
         ##########################################################
         # Phase 1: get file names                                #
         ##########################################################
-        print self.span
         #if self.span > 7200.:
         #    sendspan = "-{0:1.0f}m".format(self.span/60.+1.) # use minutes if greater than 7200 seconds
         #else:
@@ -344,19 +347,12 @@ class aia_mkmovie:
             self.fits_files_temp = []
            #loop over all wavelengths in array
             for i in self.wav:
-                print i
                 fits_files = src.get_filelist(date=self.end.strftime("%Y-%m-%d"),time=self.end.strftime("%H:%M:%S"),span=sendspan,wavelnth=i)
                 qfls, qtms = src.run_quality_check(synoptic=self.synoptic)
                 self.fits_files_temp.append(src.get_sample(files = qfls, sample = self.cadence, nfiles = 1))
             #transpose list array
             self.fits_files = map(list,zip(*self.fits_files_temp))
 
-        for i in self.fits_files:
-            newfile = i.split('/')[-1]
-            try:
-                os.symlink(i,self.sdir+'/raw/'+newfile)
-            except OSError:
-                continue
         
 
 
