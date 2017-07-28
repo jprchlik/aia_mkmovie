@@ -50,6 +50,8 @@ class gui_c(Tk.Frame):
         self.cy = cy
         self.cx = cx
 
+        #clicked point on the figure
+        self.clicked = False
 
         #Dictionary for vmax, vmin, and color
         self.img_scale = {'0094':[cm.sdoaia94  ,np.arcsinh(1.),np.arcsinh(150.)],
@@ -82,7 +84,11 @@ class gui_c(Tk.Frame):
 
         aratio = float(x)/float(y)
 #Create the figure
-        self.f,self.a = plt.subplots(figsize=(8*aratio,8*aratio*.5))
+        self.f,self.a = plt.subplots(ncols=2,figsize=(8*aratio,8*aratio*.5))
+#Separate the two plotting windows
+        self.x = self.a[1]
+        self.a = self.a[0]
+ 
 #Create window for the plot
         self.canvas = FigureCanvasTkAgg(self.f,master=self)
 #Draw the plot
@@ -138,52 +144,64 @@ class gui_c(Tk.Frame):
 
 #set up center x box
         w0Text = Tk.StringVar()
-        w0Text.set("Center X Position")
+        w0Text.set("Width (pixels)")
         w0Dir = Tk.Label(self,textvariable=w0Text,height=4)
         w0Dir.pack(side=Tk.LEFT)
 #Add so center x can be updated
         w0 = Tk.StringVar()
-        w0.set('{0:5.2}'.format(self.w0))
-        self.vxval = Tk.Entry(self,textvariable=w0,width=10)
-        self.vxval.bind("<Return>",self.stellar_param)
-        self.vxval.pack(side=Tk.LEFT,padx=5,pady=5)
+        w0.set('{0:5.2f}'.format(self.w0))
+        self.w0val = Tk.Entry(self,textvariable=w0,width=10)
+        self.w0val.bind("<Return>",self.aia_param)
+        self.w0val.pack(side=Tk.LEFT,padx=5,pady=5)
        
-#set up center x box
+#set up center w0 box
         h0Text = Tk.StringVar()
-        h0Text.set("Center X Position")
+        h0Text.set("Height (pixels)")
         h0Dir = Tk.Label(self,textvariable=h0Text,height=4)
         h0Dir.pack(side=Tk.LEFT)
-#Add so center x can be updated
+#Add so center h0 can be updated
         h0 = Tk.StringVar()
-        h0.set('{0:5.2}'.format(self.h0))
-        self.vxval = Tk.Entry(self,textvariable=h0,width=10)
-        self.vxval.bind("<Return>",self.stellar_param)
-        self.vxval.pack(side=Tk.LEFT,padx=5,pady=5)
+        h0.set('{0:5.2f}'.format(self.h0))
+        self.h0val = Tk.Entry(self,textvariable=h0,width=10)
+        self.h0val.bind("<Return>",self.aia_param)
+        self.h0val.pack(side=Tk.LEFT,padx=5,pady=5)
        
    
-#set up center x box
+#set up center x0 box
         cxText = Tk.StringVar()
-        cxText.set("Center X Position")
+        cxText.set("X0 (arcsec)")
         cxDir = Tk.Label(self,textvariable=cxText,height=4)
         cxDir.pack(side=Tk.LEFT)
 #Add so center x can be updated
-        cx = Tk.StringVar()
-        cx.set('{0:5.2}'.format(fself.cx))
-        self.cxval = Tk.Entry(self,textvariable=cx,width=10)
-        self.cxval.bind("<Return>",self.stellar_param)
+        self.scx = Tk.StringVar()
+        self.scx.set('{0:5.2f}'.format(self.cx))
+        self.cxval = Tk.Entry(self,textvariable=self.scx,width=10)
+        self.cxval.bind("<Return>",self.aia_param)
         self.cxval.pack(side=Tk.LEFT,padx=5,pady=5)
        
-#set up center y boy
-        cyTeyt = Tk.StringVar()
-        cyTeyt.set("Center Y Position")
-        cyDir = Tk.Label(self,teytvariable=cyText,height=4)
+#set up center y box
+        cyText = Tk.StringVar()
+        cyText.set("Y0 (arcsec)")
+        cyDir = Tk.Label(self,textvariable=cyText,height=4)
         cyDir.pack(side=Tk.LEFT)
 #Add so center y can be updated
-        cy = Tk.StringVar()
-        cy.set('{0:5.2}'.format(fself.cy))
-        self.cyval = Tk.Entry(self,textvariable=cy,width=10)
-        self.cyval.bind("<Return>",self.stellar_param)
+        self.scy = Tk.StringVar()
+        self.scy.set('{0:5.2f}'.format(self.cy))
+        self.cyval = Tk.Entry(self,textvariable=self.scy,width=10)
+        self.cyval.bind("<Return>",self.aia_param)
         self.cyval.pack(side=Tk.LEFT,padx=5,pady=5)
+
+#set up order number
+        orderText = Tk.StringVar()
+        orderText.set("Order")
+        orderDir = Tk.Label(self,textvariable=orderText,height=4)
+        orderDir.pack(side=Tk.LEFT)
+#Add so order number can be updated
+        self.sorder = Tk.StringVar()
+        self.sorder.set(str(int(self.order)))
+        self.orderval = Tk.Entry(self,textvariable=self.sorder,width=10)
+        self.orderval.bind("<Return>",self.on_order_box)
+        self.orderval.pack(side=Tk.LEFT,padx=5,pady=5)
        
 #set up Submenu
         menubar = Tk.Menu(self.parent)
@@ -196,8 +214,34 @@ class gui_c(Tk.Frame):
 
         fileMenu.add_command(label='Exit',underline=0,command=self.onExit)
 
+
+    #set AIA parameters
+    def aia_param(self,event):
+#release cursor from entry box and back to the figure
+#needs to be done otherwise key strokes will not work
+        self.f.canvas._tkcanvas.focus_set()
+        try:
+            self.h0 = float(self.h0val.get())
+            self.w0 = float(self.w0val.get())
+            self.cx = float(self.cxval.get())
+            self.cy = float(self.cyval.get())
+        #now replot
+            self.clicked = True
+            self.sub_window()
+            self.aia_plot()
+            self.clicked = False
+
+#error if not floats
+        except ValueError:
+            self.error = 10
+            self.onError()
+
+
+
 #Exits the program
     def onExit(self):
+       plt.clf()
+       plt.close()
        self.quit()
 
 
@@ -205,39 +249,55 @@ class gui_c(Tk.Frame):
     def increaseorder(self):
         self.order = self.order+1
         if self.order > self.ordermax:
-            self.order = 1 
+            self.order = 0 
         self.sorder.set(str(int(self.order)))
+        self.clicked = True
         self.a.clear()
         self.aia_set()
         self.aia_plot()
-
+        self.clicked = False
 #Command to decrease order to plot new aia image
     def decreaseorder(self):
         self.order = self.order-1
-        if self.order < 1:
+        if self.order < 0:
             self.order = self.ordermax
         self.sorder.set(str(int(self.order)))
+        self.clicked = True
         self.a.clear()
         self.aia_set()
         self.aia_plot()
+        self.clicked = False
 
 
 # get the image properties
     def img_prop(self):
-       self.wav ='{0:4.0f}'.format( img.wavelength.value).replace(' ','0')
+       self.wav ='{0:4.0f}'.format(self.img.wavelength.value).replace(' ','0')
        #use default color tables
-       sel.ficmap = self.img_scale[self.wav][0]
-       sel.fivmin = self.img_scale[self.wav][1]
-       sel.fivmax = self.img_scale[self.wav][2]
+       self.icmap = self.img_scale[self.wav][0]
+       self.ivmin = self.img_scale[self.wav][1]
+       self.ivmax = self.img_scale[self.wav][2]
 
 
 #plot the current AIA image
     def aia_plot(self):
        self.a.clear()
-       self.a.imshow(self.data0,interpolation='none',cmap=self.icmap,origin='lower',vmin=self.ivmin,vmax=self.ivmax,extent=[minx,maxx,miny,maxy])
-       self.a.scatter(click.xdata,click.ydata,marker='x',color='red',s=35,zorder=499)
-       self.a.plot(self.xbox,self.ybox,color='black',linewidth=4,zorder=500)
-       self.a.plot(self.xbox,self.ybox,'--',color='white',linewidth=3,zorder=501)
+       self.a.imshow(self.data0,interpolation='none',cmap=self.icmap,origin='lower',vmin=self.ivmin,vmax=self.ivmax,extent=[self.minx,self.maxx,self.miny,self.maxy])
+       self.a.set_xlabel('Arcseconds')
+       self.a.set_ylabel('Arcseconds')
+       if self.clicked:
+           #Show the clicked region in a separate plot
+           self.x.clear()
+           self.x.imshow(self.data0,interpolation='none',cmap=self.icmap,origin='lower',vmin=self.ivmin,vmax=self.ivmax,extent=[self.minx,self.maxx,self.miny,self.maxy])
+           self.x.set_xlim([min(self.xbox),max(self.xbox)])           
+           self.x.set_ylim([min(self.ybox),max(self.ybox)])           
+           self.x.scatter(self.cx,self.cy,marker='x',color='red',s=35,zorder=499)
+           self.x.set_xlabel('Arcseconds')
+           self.x.set_ylabel('Arcseconds')
+
+           #show the selected region on the big plot
+           self.a.scatter(self.cx,self.cy,marker='x',color='red',s=35,zorder=499)
+           self.a.plot(self.xbox,self.ybox,color='black',linewidth=5,zorder=500)
+           self.a.plot(self.xbox,self.ybox,'--',color='white',linewidth=3,zorder=501)
        self.canvas.draw()
    
 #set variables spectrum of a given order
@@ -249,6 +309,9 @@ class gui_c(Tk.Frame):
        self.img = sunpy.map.Map(self.infile)
        self.maxx,self.minx,self.maxy,self.miny = self.img_extent() #get extent of image for coverting pixel into physical
        self.data0 = np.arcsinh(self.img.data) #reference the data plot seperately
+       self.scale = [1./self.img.scale[0].value,1./self.img.scale[1].value] # get x, y image scale
+       #set aia plotting preferences
+       self.img_prop()
 
     def img_extent(self):
     # get the image coordinates in pixels
@@ -276,26 +339,88 @@ class gui_c(Tk.Frame):
 #Make sure you click inside the plot
         try:
             #test to make sure the data are in the plot
-            test = click.ydata-0.
             test = click.xdata-0.
-            #self.contx.append(click.xdata)
-            #self.conty.append(click.ydata)
-            #self.pcontx.append(click.x)
-            #self.pconty.append(click.y)
+            test = click.ydata-0.
+
+            #store the physical value of clicked points
             self.cx = click.xdata
             self.cy = click.ydata
 
 
-            self.xbox = [click.xdata-(self.scale*self.w0/2.),click.xdata-(self.scale*self.w0/2.),click.xdata+(self.scale*self.w0/2.),click.xdata+(self.scale*self.w0/2.),click.xdata-(self.scale*self.w0/2.)]
-            self.ybox = [click.ydata-(self.scale*self.h0/2.),click.ydata-(self.scale*self.h0/2.),click.ydata+(self.scale*self.h0/2.),click.ydata+(self.scale*self.h0/2.),click.ydata-(self.scale*self.h0/2.)]
+            #tell the plot its been clicked
+            self.clicked = True
+
+            #create subwindow of selected region
+            self.sub_window()
+
+            #update the x and y parameters in bottom box
+            self.scx.set('{0:5.2f}'.format(self.cx))
+            self.scy.set('{0:5.2f}'.format(self.cy))
+
+            #plot new cutout box
+            self.aia_plot()
 
 
+            #update the plot parameters
 
+            #reset to no click
+            self.clicked = False
             
 #Throw error if clicked outside the plot
         except TypeError:
             self.error = 20
             self.onError()
+
+   #create window for plotting
+    def sub_window(self):
+        self.xbox = [self.cx-(self.scale[0]*self.w0/2.),self.cx-(self.scale[0]*self.w0/2.),self.cx+(self.scale[0]*self.w0/2.),self.cx+(self.scale[0]*self.w0/2.),self.cx-(self.scale[0]*self.w0/2.)]
+        self.ybox = [self.cy-(self.scale[1]*self.h0/2.),self.cy+(self.scale[1]*self.h0/2.),self.cy+(self.scale[1]*self.h0/2.),self.cy-(self.scale[1]*self.h0/2.),self.cy-(self.scale[1]*self.h0/2.)]
+
+#Function for retrieving order from popup
+    def on_order(self):
+        m = 0
+        while m == 0:
+            try:
+                inputO = order_popup(root)
+                root.wait_window(inputO.top)
+                order = int(inputO.order)
+                if ((order > 0) & (order <= self.ordermax)):
+                    m = 1
+                else:
+#Error order is out of range
+                    self.error = 3
+                    self.onError()
+            except ValueError:
+#Error order is not an integer
+                self.error = 4
+                self.onError()
+
+        return order
+
+#Function for retrieving order from text box
+    def on_order_box(self,event):
+#release cursor from entry box and back to the figure
+#needs to be done otherwise key strokes will not work
+        self.f.canvas._tkcanvas.focus_set()
+        m = 0
+        while m == 0:
+            try:
+                order = self.orderval.get()
+                order = int(order)
+                if ((order > 0) & (order <= self.ordermax)):
+                    m = 1
+                    self.order = order
+                    self.spec_set()
+                    self.spec_plot()
+                else:
+#Error order is out of range
+                    self.error = 3
+                    self.onError()
+            except ValueError:
+#Error order is not an integer
+                self.error = 4
+                self.onError()
+            
 
 
 
