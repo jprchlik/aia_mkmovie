@@ -229,7 +229,8 @@ class aia_mkimage:
             check, img = self.qual_check()
            
             #return image wavelength
-            if isinstance(img,list):
+            #if isinstance(img,list):
+            if self.color3:
                 self.wav = []
                 img3d = np.zeros((img[0].data.shape[0],img[0].data.shape[1],3))
                 for j,i in enumerate(img):
@@ -293,7 +294,7 @@ class aia_mkimage:
         #plot the image in matplotlib
                 #use color composite image if color3 set
                 if self.color3:
-                    ax.imshow(np.arcsinh(img3d),interpolation='none',origin='lower',extent=[minx,maxx,miny,maxy])
+                    ax.imshow(img3d,interpolation='none',origin='lower',extent=[minx,maxx,miny,maxy])
                     ax.text(minx+txtx,miny+txty,'AIA {0}/{1}/{2}'.format(*self.wav)+'- {0}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=50,fontweight='bold')
                 else:
                     ax.imshow(np.arcsinh(img.data),interpolation='none',cmap=icmap,origin='lower',vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy])
