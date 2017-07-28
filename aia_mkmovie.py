@@ -361,7 +361,7 @@ class aia_mkmovie:
             fits_files = src.get_filelist(date=self.end.strftime("%Y-%m-%d"),time=self.end.strftime("%H:%M:%S"),span=sendspan,wavelnth=self.wav)
             qfls, qtms = src.run_quality_check(synoptic=self.synoptic)
             self.fits_files = src.get_sample(files = qfls, sample = self.cadence, nfiles = 1)
-        else:
+        elif color3:
             self.fits_files_temp = []
            #loop over all wavelengths in array
             for i in self.wav:
@@ -389,8 +389,8 @@ class aia_mkmovie:
         #set parameters based on gui output
         self.cx = gui.cx
         self.cy = gui.cy
-        self.xbox = gui.xbox[:-1]
-        self.ybox = gui.ybox[:-1]
+        self.xlim = [min(gui.xbox),max(gui.xbox)]
+        self.ylim = [min(gui.ybox),max(gui.ybox)]
 
         #use image scaling to pass to mkimage
         self.img_scale=gui.img_scale
@@ -406,7 +406,8 @@ class aia_mkmovie:
 
         #create a list of class objects
         image_list = [aia_mkimage(i,w0=self.w0,h0=self.h0,dpi=self.dpi,sc=self.sc,goes=self.goes,goesdat=self.goesdat,sday=self.start,eday=self.end,img_scale=self.img_scale,cutout=self.cutout,
-                      ace=self.wind,aceadat=self.aceadat,single=self.single,panel=self.panel,color3=self.color3,time_stamp=self.time_stamp,odir=self.sdir+'/working/') for i in self.fits_files]
+                      ace=self.wind,aceadat=self.aceadat,single=self.single,panel=self.panel,color3=self.color3,time_stamp=self.time_stamp,odir=self.sdir+'/working/') ,
+                      xlim=self.xlim,ylim=self.ylim for i in self.fits_files]
 
         #J. Prchlik 2016/10/06
         #Switched jp2 to fits
