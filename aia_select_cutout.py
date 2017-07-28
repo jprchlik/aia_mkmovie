@@ -10,6 +10,7 @@ import tkFileDialog as Tkf
 import numpy as np
 import sys
 import matplotlib.pyplot as plt
+from datetime import datetime
 
 try:                                                                                      
     import sunpy.map                                                                      
@@ -28,16 +29,9 @@ else:
 class gui_c(Tk.Frame):
 
     #init gui class
-    def __init__(self,parent,flist,sday=False,eday=False,w0=1900.,h0=1200.,cy=0,cx=0):
+    def __init__(self,parent,flist,w0=1900.,h0=1200.,cy=0,cx=0,color3=False,img_scale=None):
         Tk.Frame.__init__(self,parent,background='white') #create initial frame with white background
 
-        #file list
-        if isinstance(flist,str):
-            self.flist = [flist]
-        elif isinstance(flist,list):
-            self.flist = flist
-        else:
-            sys.stdout.write('flist must be a string or list')
 
         #set the starting list to be 0
         self.order = 0
@@ -51,21 +45,43 @@ class gui_c(Tk.Frame):
         self.cy = cy
         self.cx = cx
 
+        #3 color images
+        if isinstance(color3,bool):
+            self.color3 = color3
+        else:
+            sys.stdout.write('color3 must be a boolean')
+        #file list
+        if isinstance(flist,str):
+            self.flist = [flist]
+        elif isinstance(flist,list):
+            self.flist = flist
+            #correct for single value list  in color3
+            if ((self.color3) & (len(flist) == 3)): self.flist = [self.flist]
+        else:
+            sys.stdout.write('flist must be a string or list')
+      
+
         #clicked point on the figure
         self.clicked = False
         #first clicked point on the figure
         self.firstclick = False
 
+
         #Dictionary for vmax, vmin, and color
-        self.img_scale = {'0094':[cm.sdoaia94  ,np.arcsinh(1.),np.arcsinh(150.)],
-                          '0131':[cm.sdoaia131 ,np.arcsinh(1.),np.arcsinh(500.)],
-                          '0171':[cm.sdoaia171 ,np.arcsinh(10.),np.arcsinh(2500.)],
-                          '0193':[cm.sdoaia193 ,np.arcsinh(10.),np.arcsinh(4500.)],
-                          '0211':[cm.sdoaia211 ,np.arcsinh(10.),np.arcsinh(4000.)],
-                          '0304':[cm.sdoaia304 ,np.arcsinh(2.),np.arcsinh(300.)],
-                          '0335':[cm.sdoaia335 ,np.arcsinh(1.),np.arcsinh(100.)],
-                          '1600':[cm.sdoaia1600,np.arcsinh(20.),np.arcsinh(500.)],
-                          '1700':[cm.sdoaia1700,np.arcsinh(200.),np.arcsinh(4000.)]}
+        if img_scale is None:
+            self.img_scale = {'0094':[cm.sdoaia94  ,np.arcsinh(1.),np.arcsinh(150.)],
+                              '0131':[cm.sdoaia131 ,np.arcsinh(1.),np.arcsinh(500.)],
+                              '0171':[cm.sdoaia171 ,np.arcsinh(10.),np.arcsinh(2500.)],
+                              '0193':[cm.sdoaia193 ,np.arcsinh(100.),np.arcsinh(4500.)],
+                              '0211':[cm.sdoaia211 ,np.arcsinh(10.),np.arcsinh(4000.)],
+                              '0304':[cm.sdoaia304 ,np.arcsinh(2.),np.arcsinh(300.)],
+                              '0335':[cm.sdoaia335 ,np.arcsinh(1.),np.arcsinh(100.)],
+                              '1600':[cm.sdoaia1600,np.arcsinh(20.),np.arcsinh(500.)],
+                              '1700':[cm.sdoaia1700,np.arcsinh(200.),np.arcsinh(4000.)]}
+        elif isinstance(img_scale,dict):
+            self.img_scale = img_scale
+        else:
+            sys.stdout.write('img_scale must be a dictionary with color map, min value, max value')
 
 
 
@@ -208,29 +224,116 @@ class gui_c(Tk.Frame):
         self.orderval.bind("<Return>",self.on_order_box)
         self.orderval.pack(side=Tk.LEFT,padx=5,pady=5)
        
-#set up Color Min
-        cminText = Tk.StringVar()
-        cminText.set("Color Min.")
-        cminDir = Tk.Label(self,textvariable=cminText,height=4)
-        cminDir.pack(side=Tk.RIGHT)
-#Add so Color Min can be updated
-        self.cmin = Tk.StringVar()
-        self.cmin.set('{0:5.2f}'.format(0))
-        self.cminval = Tk.Entry(self,textvariable=self.cmin,width=10)
-        self.cminval.bind("<Return>",self.aia_param)
-        self.cminval.pack(side=Tk.RIGHT,padx=5,pady=5)
+
+
+    #boxes to create if 3 color image
+        if self.color3:  
+###############################################
+#      BLUE COLOR BOXES                       #
+###############################################
+    #Add so Color Min can be updated
+            self.bcmin = Tk.StringVar()
+            self.bcmin.set('{0:5.2f}'.format(0))
+            self.bcminval = Tk.Entry(self,textvariable=self.bcmin,width=10)
+            self.bcminval.bind("<Return>",self.aia_param)
+            self.bcminval.pack(side=Tk.RIGHT,padx=5,pady=5)
+    #set up Color Min
+            bcminText = Tk.StringVar()
+            bcminText.set("B Color Min.")
+            bcminDir = Tk.Label(self,textvariable=bcminText,height=4)
+            bcminDir.pack(side=Tk.RIGHT)
        
-#set up Color Max 
-        cmaxText = Tk.StringVar()
-        cmaxText.set("Color Max.")
-        cmaxDir = Tk.Label(self,textvariable=cmaxText,height=4)
-        cmaxDir.pack(side=Tk.RIGHT)
-#Add so Color Max can be updated
-        self.cmax = Tk.StringVar()
-        self.cmax.set('{0:5.2f}'.format(0))
-        self.cmaxval = Tk.Entry(self,textvariable=self.cmax,width=10)
-        self.cmaxval.bind("<Return>",self.aia_param)
-        self.cmaxval.pack(side=Tk.RIGHT,padx=5,pady=5)
+    #Add so Color Max can be updated
+            self.bcmax = Tk.StringVar()
+            self.bcmax.set('{0:5.2f}'.format(0))
+            self.bcmaxval = Tk.Entry(self,textvariable=self.bcmax,width=10)
+            self.bcmaxval.bind("<Return>",self.aia_param)
+            self.bcmaxval.pack(side=Tk.RIGHT,padx=5,pady=5)
+    #set up Color Max 
+            bcmaxText = Tk.StringVar()
+            bcmaxText.set("B Color Max.")
+            bcmaxDir = Tk.Label(self,textvariable=bcmaxText,height=4)
+            bcmaxDir.pack(side=Tk.RIGHT)
+
+###############################################
+#     GREEN COLOR BOXES                       #
+###############################################
+    #Add so Color Min can be updated
+            self.gcmin = Tk.StringVar()
+            self.gcmin.set('{0:5.2f}'.format(0))
+            self.gcminval = Tk.Entry(self,textvariable=self.gcmin,width=10)
+            self.gcminval.bind("<Return>",self.aia_param)
+            self.gcminval.pack(side=Tk.RIGHT,padx=5,pady=5)
+    #set up Color Min
+            gcminText = Tk.StringVar()
+            gcminText.set("G Color Min.")
+            gcminDir = Tk.Label(self,textvariable=gcminText,height=4)
+            gcminDir.pack(side=Tk.RIGHT)
+       
+    #Add so Color Max can be updated
+            self.gcmax = Tk.StringVar()
+            self.gcmax.set('{0:5.2f}'.format(0))
+            self.gcmaxval = Tk.Entry(self,textvariable=self.gcmax,width=10)
+            self.gcmaxval.bind("<Return>",self.aia_param)
+            self.gcmaxval.pack(side=Tk.RIGHT,padx=5,pady=5)
+    #set up Color Max 
+            gcmaxText = Tk.StringVar()
+            gcmaxText.set("G Color Max.")
+            gcmaxDir = Tk.Label(self,textvariable=gcmaxText,height=4)
+            gcmaxDir.pack(side=Tk.RIGHT)
+###############################################
+#     RED COLOR BOXES                         #
+###############################################
+
+    #Add so Color Min can be updated
+            self.rcmin = Tk.StringVar()
+            self.rcmin.set('{0:5.2f}'.format(0))
+            self.rcminval = Tk.Entry(self,textvariable=self.rcmin,width=10)
+            self.rcminval.bind("<Return>",self.aia_param)
+            self.rcminval.pack(side=Tk.RIGHT,padx=5,pady=5)
+    #set up Color Min
+            rcminText = Tk.StringVar()
+            rcminText.set("R Color Min.")
+            rcminDir = Tk.Label(self,textvariable=rcminText,height=4)
+            rcminDir.pack(side=Tk.RIGHT)
+       
+    #Add so Color Max can be updated
+            self.rcmax = Tk.StringVar()
+            self.rcmax.set('{0:5.2f}'.format(0))
+            self.rcmaxval = Tk.Entry(self,textvariable=self.rcmax,width=10)
+            self.rcmaxval.bind("<Return>",self.aia_param)
+            self.rcmaxval.pack(side=Tk.RIGHT,padx=5,pady=5)
+    #set up Color Max 
+            rcmaxText = Tk.StringVar()
+            rcmaxText.set("R Color Max.")
+            rcmaxDir = Tk.Label(self,textvariable=rcmaxText,height=4)
+            rcmaxDir.pack(side=Tk.RIGHT)
+
+    #boxes to create if single wavelength image
+        else:
+    #Add so Color Min can be updated
+            self.cmin = Tk.StringVar()
+            self.cmin.set('{0:5.2f}'.format(0))
+            self.cminval = Tk.Entry(self,textvariable=self.cmin,width=10)
+            self.cminval.bind("<Return>",self.aia_param)
+            self.cminval.pack(side=Tk.RIGHT,padx=5,pady=5)
+    #set up Color Min
+            cminText = Tk.StringVar()
+            cminText.set("Color Min.")
+            cminDir = Tk.Label(self,textvariable=cminText,height=4)
+            cminDir.pack(side=Tk.RIGHT)
+       
+    #Add so Color Max can be updated
+            self.cmax = Tk.StringVar()
+            self.cmax.set('{0:5.2f}'.format(0))
+            self.cmaxval = Tk.Entry(self,textvariable=self.cmax,width=10)
+            self.cmaxval.bind("<Return>",self.aia_param)
+            self.cmaxval.pack(side=Tk.RIGHT,padx=5,pady=5)
+    #set up Color Max 
+            cmaxText = Tk.StringVar()
+            cmaxText.set("Color Max.")
+            cmaxDir = Tk.Label(self,textvariable=cmaxText,height=4)
+            cmaxDir.pack(side=Tk.RIGHT)
        
 #set up Submenu
         menubar = Tk.Menu(self.parent)
@@ -254,12 +357,38 @@ class gui_c(Tk.Frame):
             self.w0 = float(self.w0val.get())
             self.cx = float(self.cxval.get())
             self.cy = float(self.cyval.get())
+
             #update the color parameters
-            self.ivmin = float(self.cminval.get())
-            self.ivmax = float(self.cmaxval.get())
-            self.img_scale[self.wav][1] = self.ivmin
-            self.img_scale[self.wav][2] = self.ivmax
-            #
+            #color table update if 3 color image
+            if self.color3:
+
+                #Update R color scale
+                self.rmin = float(self.rcminval.get())
+                self.rmax = float(self.rcmaxval.get())
+                self.img_scale[self.wav[0]][1] = self.rmin
+                self.img_scale[self.wav[0]][2] = self.rmax
+
+                #Update G color scale
+                self.gmin = float(self.gcminval.get())
+                self.gmax = float(self.gcmaxval.get())
+                self.img_scale[self.wav[1]][1] = self.gmin
+                self.img_scale[self.wav[1]][2] = self.gmax
+
+                #Update B color scale
+                self.bmin = float(self.bcminval.get())
+                self.bmax = float(self.bcmaxval.get())
+                self.img_scale[self.wav[2]][1] = self.bmin
+                self.img_scale[self.wav[2]][2] = self.bmax
+        
+                #recreate 3 color image
+                self.create_3color()
+
+            #color table if single image
+            else:
+                self.ivmin = float(self.cminval.get())
+                self.ivmax = float(self.cmaxval.get())
+                self.img_scale[self.wav][1] = self.ivmin
+                self.img_scale[self.wav][2] = self.ivmax
         #now replot
             self.clicked = True
             self.sub_window()
@@ -304,22 +433,86 @@ class gui_c(Tk.Frame):
         self.clicked = False
 
 
+    #create 3 color image
+    def create_3color(self):
+        self.wav = []
+        for j,i in enumerate(self.img):
+            self.wav.append('{0:4.0f}'.format(i.wavelength.value).replace(' ','0'))
+            #set normalized scaling for every observation
+            self.ivmin = self.img_scale[self.wav[j]][1]
+            self.ivmax = self.img_scale[self.wav[j]][2]
+            prelim = (np.arcsinh(i.data)-self.ivmin)/self.ivmax
+
+            #replace out of bounds points
+            prelim[prelim < 0.] = 0.
+            prelim[prelim > 1.] = 1.
+            self.img3d[:,:,j] = prelim
+
+            #set the string value in the plot window
+            if j == 0:
+                self.rcmin.set('{0:9.3}'.format(self.ivmin))
+                self.rcmax.set('{0:9.3}'.format(self.ivmax))
+            if j == 1:
+                self.gcmin.set('{0:9.3}'.format(self.ivmin))
+                self.gcmax.set('{0:9.3}'.format(self.ivmax))
+            if j == 2:
+                self.bcmin.set('{0:9.3}'.format(self.ivmin))
+                self.bcmax.set('{0:9.3}'.format(self.ivmax))
+
+            #Retrieved and set the time value
+            self.obs_time = self.img[0].date
+
 # get the image properties
     def img_prop(self):
-       self.wav ='{0:4.0f}'.format(self.img.wavelength.value).replace(' ','0')
-       #use default color tables
-       self.icmap = self.img_scale[self.wav][0]
-       self.ivmin = self.img_scale[self.wav][1]
-       self.ivmax = self.img_scale[self.wav][2]
-       #set the string value in the plot window
-       self.cmin.set('{0:9.3}'.format(self.ivmin))
-       self.cmax.set('{0:9.3}'.format(self.ivmax))
+
+        #different plotting properties if color3 set
+        if self.color3:
+            self.create_3color()
+        else:         
+            self.wav ='{0:4.0f}'.format(self.img.wavelength.value).replace(' ','0')
+            #use default color tables
+            self.icmap = self.img_scale[self.wav][0]
+            self.ivmin = self.img_scale[self.wav][1]
+            self.ivmax = self.img_scale[self.wav][2]
+ 
+            #set the string value in the plot window
+            self.cmin.set('{0:9.3}'.format(self.ivmin))
+            self.cmax.set('{0:9.3}'.format(self.ivmax))
+ 
+            #Retrieved and set the time value
+            self.obs_time = self.img.date
+ 
+    def text_loc(self):
+#set text location
+        #if self.w0 > self.h0:
+        #    self.txtx = -(self.w0-self.h0)
+        #    self.txty = (self.maxy-self.miny)*0.01
+        #elif self.w0 < self.h0:
+        #    self.txty = -(self.h0-self.w0)
+        #    self.txtx = (self.maxx-self.minx)*0.01
+        #if self.w0 == self.h0:
+        self.txtx = (self.maxx-self.minx)*0.01
+        self.txty = (self.maxy-self.miny)*0.01
+
 
 
 #plot the current AIA image
     def aia_plot(self):
+       #clear the current image
        self.a.clear()
-       self.a.imshow(self.data0,interpolation='none',cmap=self.icmap,origin='lower',vmin=self.ivmin,vmax=self.ivmax,extent=[self.minx,self.maxx,self.miny,self.maxy])
+       #find where to put the plotting information
+       self.text_loc()
+
+
+       #Make 3 color plot
+       if self.color3:
+           self.a.imshow(self.img3d,interpolation='none',origin='lower',extent=[self.minx,self.maxx,self.miny,self.maxy])
+           self.a.text(self.minx+self.txtx,self.miny+self.txty,'AIA {0}/{1}/{2}'.format(*self.wav)+'- {0}Z'.format(self.img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=14,zorder=50,fontweight='bold')
+       else:
+           self.a.imshow(self.data0,interpolation='none',cmap=self.icmap,origin='lower',vmin=self.ivmin,vmax=self.ivmax,extent=[self.minx,self.maxx,self.miny,self.maxy])
+           #show current date
+           self.a.text(self.minx+self.txtx,self.miny+self.txty,'{0}Z'.format(self.obs_time.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=14,zorder=50,fontweight='bold')
+
        self.a.set_xlabel('Arcseconds')
        self.a.set_ylabel('Arcseconds')
        if self.clicked:
@@ -327,7 +520,12 @@ class gui_c(Tk.Frame):
            if not self.x.get_frame_on(): self.x.set_axis_on()
            #Show the clicked region in a separate plot
            self.x.clear()
-           self.x.imshow(self.data0,interpolation='none',cmap=self.icmap,origin='lower',vmin=self.ivmin,vmax=self.ivmax,extent=[self.minx,self.maxx,self.miny,self.maxy])
+           #3 color image
+           if self.color3:
+               self.x.imshow(self.img3d,interpolation='none',origin='lower',extent=[self.minx,self.maxx,self.miny,self.maxy])
+           else:
+               self.x.imshow(self.data0,interpolation='none',cmap=self.icmap,origin='lower',vmin=self.ivmin,vmax=self.ivmax,extent=[self.minx,self.maxx,self.miny,self.maxy])
+
            self.x.set_xlim([min(self.xbox),max(self.xbox)])           
            self.x.set_ylim([min(self.ybox),max(self.ybox)])           
            self.x.scatter(self.cx,self.cy,marker='x',color='red',s=35,zorder=499)
@@ -343,28 +541,52 @@ class gui_c(Tk.Frame):
 #set variables spectrum of a given order
     def aia_set(self):
 
-       #set current index
-       self.infile = self.flist[self.order]
+       #set current index depending on 3color image
+       if self.color3:
+           self.infile = self.flist[self.order]
+       #else single file
+       else:
+           self.infile = self.flist[self.order]
        #put file into sunpy map
        self.img = sunpy.map.Map(self.infile)
        self.maxx,self.minx,self.maxy,self.miny = self.img_extent() #get extent of image for coverting pixel into physical
-       self.data0 = np.arcsinh(self.img.data) #reference the data plot seperately
-       self.scale = [1./self.img.scale[0].value,1./self.img.scale[1].value] # get x, y image scale
+       #3 color image
+       if self.color3:
+           self.img3d = np.zeros((self.img[0].data.shape[0],self.img[0].data.shape[1],3))
+           self.scale = [1./self.img[0].scale[0].value,1./self.img[0].scale[1].value] # get x, y image scale
+       #single color image
+       else:
+           self.data0 = np.arcsinh(self.img.data) #reference the data plot seperately
+           self.scale = [1./self.img.scale[0].value,1./self.img.scale[1].value] # get x, y image scale
        #set aia plotting preferences
        self.img_prop()
 
     def img_extent(self):
-    # get the image coordinates in pixels
-        px0 = self.img.meta['crpix1']
-        py0 = self.img.meta['crpix2']
-    # get the image coordinates in arcsec 
-        ax0 = self.img.meta['crval1']
-        ay0 = self.img.meta['crval2']
-    # get the image scale in arcsec 
-        axd = self.img.meta['cdelt1']
-        ayd = self.img.meta['cdelt2']
-    #get the number of pixels
-        tx,ty = self.img.data.shape
+    #get only physical values for first image if color 3
+        if self.color3:
+        # get the image coordinates in pixels
+            px0 = self.img[0].meta['crpix1']
+            py0 = self.img[0].meta['crpix2']
+        # get the image coordinates in arcsec 
+            ax0 = self.img[0].meta['crval1']
+            ay0 = self.img[0].meta['crval2']
+        # get the image scale in arcsec 
+            axd = self.img[0].meta['cdelt1']
+            ayd = self.img[0].meta['cdelt2']
+        #get the number of pixels
+            tx,ty = self.img[0].data.shape
+        else:
+        # get the image coordinates in pixels
+            px0 = self.img.meta['crpix1']
+            py0 = self.img.meta['crpix2']
+        # get the image coordinates in arcsec 
+            ax0 = self.img.meta['crval1']
+            ay0 = self.img.meta['crval2']
+        # get the image scale in arcsec 
+            axd = self.img.meta['cdelt1']
+            ayd = self.img.meta['cdelt2']
+        #get the number of pixels
+            tx,ty = self.img.data.shape
     #get the max and min x and y values
         minx,maxx = px0-tx,tx-px0
         miny,maxy = py0-ty,ty-py0
