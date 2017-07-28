@@ -51,6 +51,9 @@ class aia_mkimage:
 
     def __init__(self,dayarray,sday=False,eday=False,w0=1900.,h0=1200.,dpi=100.,sc=1.,goes=False,goesdat=False,ace=False,aceadat=False,single=True,panel=False,color3=False,time_stamp=True,odir='working/'):
 
+        """
+        Day array if 3 color goes in as RGB
+        """
         #check format of input day array
         if isinstance(dayarray,list):
             self.dayarray = dayarray
@@ -202,6 +205,16 @@ class aia_mkimage:
                           '0335':[cm.sdoaia335 ,np.arcsinh(1.),np.arcsinh(100.)],
                           '1600':[cm.sdoaia1600,np.arcsinh(20.),np.arcsinh(500.)],
                           '1700':[cm.sdoaia1700,np.arcsinh(200.),np.arcsinh(4000.)]}
+        #Dictionary for vmax, vmin, and color
+        self.img_scale = {'0094':[cm.sdoaia94  ,np.arcsinh(1.),np.arcsinh(150.)],
+                          '0131':[cm.sdoaia131 ,np.arcsinh(1.),np.arcsinh(500.)],
+                          '0171':[cm.sdoaia171 ,np.arcsinh(10.),np.arcsinh(2500.)],
+                          '0193':[cm.sdoaia193 ,np.arcsinh(10.),np.arcsinh(4500.)],
+                          '0211':[cm.sdoaia211 ,np.arcsinh(10.),np.arcsinh(4000.)],
+                          '0304':[cm.sdoaia304 ,np.arcsinh(2.),np.arcsinh(300.)],
+                          '0335':[cm.sdoaia335 ,np.arcsinh(1.),np.arcsinh(100.)],
+                          '1600':[cm.sdoaia1600,np.arcsinh(20.),np.arcsinh(500.)],
+                          '1700':[cm.sdoaia1700,np.arcsinh(200.),np.arcsinh(4000.)]}
 
 
     #for j,i in enumerate(dayarray):
@@ -281,7 +294,7 @@ class aia_mkimage:
                 #use color composite image if color3 set
                 if self.color3:
                     ax.imshow(np.arcsinh(img3d),interpolation='none',origin='lower',extent=[minx,maxx,miny,maxy])
-                    ax.text(minx+txtx,miny+txty,'AIA {2}/{1}/{0}'.format(*self.wav)+'- {0}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=50,fontweight='bold')
+                    ax.text(minx+txtx,miny+txty,'AIA {0}/{1}/{2}'.format(*self.wav)+'- {0}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=50,fontweight='bold')
                 else:
                     ax.imshow(np.arcsinh(img.data),interpolation='none',cmap=icmap,origin='lower',vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy])
                     ax.text(minx+txtx,miny+txty,'AIA {0} - {1}Z'.format(self.wav,img.date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=50,fontweight='bold')
