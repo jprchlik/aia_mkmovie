@@ -40,10 +40,42 @@ class gui_c(Tk.Frame):
 
         #create parent variable
         self.parent = parent
-        self.w0 = w0
-        self.h0 = h0
-        self.cy = cy
-        self.cx = cx
+
+
+        #check image height
+        if isinstance(h0,(int,float)):
+            self.h0 = h0
+        else:
+            sys.stdout.write('h0 must be an integer or float (Assuming 0)')
+            self.h0 = 0.0
+
+        #check image width
+        if isinstance(w0,(int,float)):
+            self.w0 = w0
+        else:
+            sys.stdout.write('w0 must be an integer or float (Assuming 0)')
+            self.w0 = 0.0
+
+
+        #check image x center
+        if isinstance(cx,(int,float)):
+            self.cx = cx
+        else:
+            sys.stdout.write('cx must be an integer or float (Assuming 0)')
+            self.cx = 0.0
+
+        #check image y center
+        if isinstance(cy,(int,float)):
+            self.cy = cy
+        else:
+            sys.stdout.write('cy must be an integer or float (Assuming 0)')
+            self.cy = 0.0
+
+
+
+
+
+
 
         #3 color images
         if isinstance(color3,bool):
