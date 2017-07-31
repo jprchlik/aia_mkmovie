@@ -447,6 +447,9 @@ class aia_mkmovie:
         #set cutout to be true if prompt selected 
         self.cutout = True
 
+        #if rotation is set return the rotation 0 time
+        if self.rotation: self.rot_time = gui.obs_time
+
 
     def create_images_movie(self):
 
