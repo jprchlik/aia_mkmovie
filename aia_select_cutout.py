@@ -494,7 +494,7 @@ class gui_c(Tk.Frame):
                 self.bcmin.set('{0:9.3}'.format(self.ivmin))
                 self.bcmax.set('{0:9.3}'.format(self.ivmax))
 
-            #Retrieved and set the time value
+            #Retrieved and set the time value based on R image
             self.obs_time = self.img[0].date
 
 # get the image properties
@@ -542,7 +542,8 @@ class gui_c(Tk.Frame):
        #Make 3 color plot
        if self.color3:
            self.a.imshow(self.img3d,interpolation='none',origin='lower',extent=[self.minx,self.maxx,self.miny,self.maxy])
-           self.a.text(self.minx+self.txtx,self.miny+self.txty,'AIA {0}/{1}/{2}'.format(*self.wav)+'- {0}Z'.format(self.img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=14,zorder=50,fontweight='bold')
+           #set the observation time which will be use for rotation
+           self.a.text(self.minx+self.txtx,self.miny+self.txty,'AIA {0}/{1}/{2}'.format(*self.wav)+'- {0}Z'.format(self.obs_time.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=14,zorder=50,fontweight='bold')
        else:
            self.a.imshow(self.data0,interpolation='none',cmap=self.icmap,origin='lower',vmin=self.ivmin,vmax=self.ivmax,extent=[self.minx,self.maxx,self.miny,self.maxy])
            #show current date
