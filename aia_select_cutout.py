@@ -585,11 +585,11 @@ class gui_c(Tk.Frame):
        #3 color image
        if self.color3:
            self.img3d = np.zeros((self.img[0].data.shape[0],self.img[0].data.shape[1],3))
-           self.scale = [1./self.img[0].scale[0].value,1./self.img[0].scale[1].value] # get x, y image scale
+           self.scale = [self.img[0].scale[0].value,self.img[0].scale[1].value] # get x, y image scale
        #single color image
        else:
            self.data0 = np.arcsinh(self.img.data) #reference the data plot seperately
-           self.scale = [1./self.img.scale[0].value,1./self.img.scale[1].value] # get x, y image scale
+           self.scale = [self.img.scale[0].value,self.img.scale[1].value] # get x, y image scale
        #set aia plotting preferences
        self.img_prop()
 
