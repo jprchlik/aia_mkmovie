@@ -34,7 +34,7 @@ from aia_mkimage import aia_mkimage
 class aia_mkmovie:
 
     #initialize aia_mkmovie
-    def __init__(self,start,end,wav,cadence='6m',w0=1900,h0=1144,dpi=300,usehv = False,panel=False,color3=False,select=False,videowall=True,nproc=2,goes=False,wind=False,x0=0.0,y0=0.0,archive="/data/SDO/AIA/synoptic/",dfmt = '%Y/%m/%d %H:%M:%S',outf=True,synoptic=True,odir='working/',frate=10,time_stamp=True,cx=0.0,cy=0.0,prompt=False,cutout=False):
+    def __init__(self,start,end,wav,cadence='6m',w0=1900,h0=1144,dpi=300,usehv = False,panel=False,color3=False,select=False,videowall=True,nproc=2,goes=False,wind=False,x0=0.0,y0=0.0,archive="/data/SDO/AIA/synoptic/",dfmt = '%Y/%m/%d %H:%M:%S',outf=True,synoptic=True,odir='working/',frate=10,time_stamp=True,cx=0.0,cy=0.0,prompt=False,cutout=False,rotataion=False):
         """ 
         Take 3 color input of R,G,B for wavelength
 
@@ -171,14 +171,21 @@ class aia_mkmovie:
             sys.stdout.write('timestamp must be a boolean')
             sys.exit(1)
 
-        #check if prompt flag is set (Default = True)
+        #check if rotation flag is set (Default = False)
+        if isinstance(time_stamp,bool): 
+            self.time_stamp = time_stamp
+        else:
+            sys.stdout.write('rotation must be a boolean')
+            sys.exit(1)
+
+        #check if prompt flag is set (Default = False)
         if isinstance(prompt,bool): 
             self.prompt = prompt
         else:
             sys.stdout.write('prompt must be a boolean')
             sys.exit(1)
 
-        #check if cutout flag is set (Default = True)
+        #check if cutout flag is set (Default = False)
         if isinstance(cutout,bool): 
             self.cutout = cutout
         else:
@@ -251,6 +258,7 @@ class aia_mkmovie:
             if self.wav not in self.awavs:
                 sys.stdout.write('{0} not an acceptable wavelength'.format(self.wav))
                 sys.exit(1)
+
         #check formatting assuming array
         elif isinstance(wav,(list,np.ndarray)):
             self.wav = []
@@ -272,8 +280,6 @@ class aia_mkmovie:
                 sys.exit(1)
    
 
-        print self.single
-        print self.wav
         #directory for file output
         wavapp = ''
         if self.single: wavapp = '_{0}'.format(self.wav)
@@ -405,8 +411,6 @@ class aia_mkmovie:
                     self.fits_files_temp.append(src.get_sample(files = qfls, sample = self.cadence, nfiles = 1))
             #transpose list array
             self.fits_files = map(list,zip(*self.fits_files_temp))
-            #create list of files based roughly on time (indices 0-3 are different wavelengths at roughly the same time)
-            if self.panel: self.fits_files = reduce(lambda x,y: x+y, self.fits_files)
              
 
 
@@ -419,8 +423,13 @@ class aia_mkmovie:
             import tkinter as Tk
         import aia_select_cutout as asc
 
+
+        #create list of files based roughly on time (indices 0-3 are different wavelengths at roughly the same time)
+        if self.panel: templist = reduce(lambda x,y: x+y, self.fits_files)
+        else: templist = self.fits_files
+
         #init gui instance
-        gui = asc.gui_c(Tk.Tk(),self.fits_files,color3=self.color3,w0=self.w0,h0=self.h0,cx=self.cx,cy=self.cy,img_scale=self.img_scale)
+        gui = asc.gui_c(Tk.Tk(),templist,color3=self.color3,w0=self.w0,h0=self.h0,cx=self.cx,cy=self.cy,img_scale=self.img_scale)
         #run the gui to select region
         gui.mainloop()
 
