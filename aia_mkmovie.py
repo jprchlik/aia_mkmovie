@@ -392,7 +392,7 @@ class aia_mkmovie:
                 sys.exit(1)
             else:
                 self.fits_files = src.get_sample(files = qfls, sample = self.cadence, nfiles = 1)
-        elif self.color3:
+        elif ((self.color3) | (self.panel)):
             self.fits_files_temp = []
            #loop over all wavelengths in array
             for i in self.wav:
@@ -405,6 +405,9 @@ class aia_mkmovie:
                     self.fits_files_temp.append(src.get_sample(files = qfls, sample = self.cadence, nfiles = 1))
             #transpose list array
             self.fits_files = map(list,zip(*self.fits_files_temp))
+            #create list of files based roughly on time (indices 0-3 are different wavelengths at roughly the same time)
+            if self.panel: self.fits_files = reduce(lambda x,y: x+y, self.fits_files)
+             
 
 
     #prompt for selecting area
