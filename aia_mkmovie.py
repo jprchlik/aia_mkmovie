@@ -424,6 +424,8 @@ class aia_mkmovie:
         #set parameters based on gui output
         self.cx = gui.cx
         self.cy = gui.cy
+        self.w0 = gui.w0
+        self.h0 = gui.h0
         self.xlim = [min(gui.xbox),max(gui.xbox)]
         self.ylim = [min(gui.ybox),max(gui.ybox)]
 
@@ -443,7 +445,7 @@ class aia_mkmovie:
                       img_scale=self.img_scale,cutout=self.cutout,
                       ace=self.wind,aceadat=self.aceadat,single=self.single,panel=self.panel,
                       color3=self.color3,time_stamp=self.time_stamp,odir=self.sdir+'/working/',
-                      xlim=self.xlim,ylim=self.ylim) for i in self.fits_files]
+                      xlim=self.xlim,ylim=self.ylim,synoptic=self.synoptic) for i in self.fits_files]
 
         #J. Prchlik 2016/10/06
         #Switched jp2 to fits
