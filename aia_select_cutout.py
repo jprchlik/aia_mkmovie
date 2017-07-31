@@ -82,6 +82,9 @@ class gui_c(Tk.Frame):
             self.color3 = color3
         else:
             sys.stdout.write('color3 must be a boolean')
+
+
+
         #file list
         if isinstance(flist,str):
             self.flist = [flist]
@@ -547,7 +550,7 @@ class gui_c(Tk.Frame):
 
        self.a.set_xlabel('Arcseconds')
        self.a.set_ylabel('Arcseconds')
-       if self.clicked:
+       if ((self.clicked) & (self.firstclick)):
            #make sure axis is on if not turn it on
            if not self.x.get_frame_on(): self.x.set_axis_on()
            #Show the clicked region in a separate plot
@@ -579,6 +582,7 @@ class gui_c(Tk.Frame):
        #else single file
        else:
            self.infile = self.flist[self.order]
+
        #put file into sunpy map
        self.img = sunpy.map.Map(self.infile)
        self.maxx,self.minx,self.maxy,self.miny = self.img_extent() #get extent of image for coverting pixel into physical
