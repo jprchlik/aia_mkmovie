@@ -35,18 +35,20 @@ class aia_mkimage:
     def __init__(self,dayarray,sday=False,eday=False,w0=1900.,h0=1200.,dpi=100.,sc=1.,
                  goes=False,goesdat=False,ace=False,aceadat=False,single=True,panel=False,
                  color3=False,time_stamp=True,odir='working/',cutout=False,
-                 img_scale=None,cx=0.,cy=0.,xlim=None,ylim=None):
+                 img_scale=None,cx=0.,cy=0.,xlim=None,ylim=None,synoptic=False):
 
         """
         Day array if 3 color goes in as RGB
+        Day array if panel goes in as Top left, top right, bottom left, bottom right 
         """
         #check format of input day array
         if isinstance(dayarray,list):
             self.dayarray = dayarray
             if len(dayarray) == 3: color3 = True #automatically assume rgb creation if 3 
+            if len(dayarray) == 4: panel = True #automatically assume panel creation if 4 
             elif len(dayarray) == 1: color3 = False #force color 3 to be false if length 1 array
             else:
-                sys.stdout.write('dayarray must be length 1 or 3')
+                sys.stdout.write('dayarray must be length 1 (single), 3 (rgb), or 4 (panel)')
                 sys.exit(1)
         #if just a string turn the file string into a list
         elif isinstance(dayarray,str):
@@ -62,6 +64,15 @@ class aia_mkimage:
         else:
             sys.stdout.write('ace must be a boolean')
             sys.exit(1)
+
+        #check if synoptic flag is set
+        if isinstance(synoptic,bool):  
+            self.synoptic = synoptic
+        else:
+            sys.stdout.write('synoptic must be a boolean')
+            sys.exit(1)
+
+        #check if goes flag is set
 
         #check if goes flag is set
         if isinstance(goes,bool): 
@@ -276,6 +287,19 @@ class aia_mkimage:
                     img3d[:,:,j] = prelim
                 #output png file
                 outfi = self.odir+'AIA_{0}_'.format(img[0].date.strftime('%Y%m%d_%H%M%S'))+'{0}_{1}_{2}.png'.format(*self.wav)
+            #set up panel plot parameters
+            elif self.panel:
+                ivmin = {}
+                ivmax = {}
+                icmap = {}
+                self.wav = []
+                #put parameters in a series of dictionaries
+                for j,i in enumerate(img):
+                    self.wav.append('{0:4.0f}'.format(i.wavelength.value).replace(' ','0'))
+                    icmap[self.wav[j]] = self.img_scale[self.wav[j]][0]
+                    ivmin[self.wav[j]] = self.img_scale[self.wav[j]][1]
+                    ivmax[self.wav[j]] = self.img_scale[self.wav[j]][2]
+                outfi = self.odir+'AIA_{0}_'.format(img[0].date.strftime('%Y%m%d_%H%M%S'))+'{0}_{1}_{2}_{3}.png'.format(*self.wav)
             else:
                 self.wav ='{0:4.0f}'.format( img.wavelength.value).replace(' ','0')
                 #use default color tables
@@ -290,14 +314,28 @@ class aia_mkimage:
         #test to see if png file already exists and passes quality tests
             if ((test == False) & (check)):
                 print 'Modifying file '+outfi
-                fig,ax = plt.subplots(figsize=(self.sc*float(self.w0)/float(self.dpi),self.sc*float(self.h0)/float(self.dpi)))
-                fig.set_dpi(self.dpi)
-                fig.subplots_adjust(left=0,bottom=0,right=1,top=1)
-                if self.panel: fig.subplots_adjust(vspace=0.0001,hspace=0.0001)
-                ax.set_axis_off()
         		# J. Prchlik 2016/10/06
         #Block add J. Prchlik (2016/10/06) to give physical coordinate values 
-                img = sunpy.map.Map(*self.filep)
+
+                #set up extra in stuff in plot if panel set
+                if self.panel:
+                    fig,ax = plt.subplots(figsize=(self.sc*float(self.w0)/float(self.dpi),self.sc*float(self.h0)/float(self.dpi)))
+                    fig.subplots_adjust(vspace=0.0001,hspace=0.0001)
+                    #make axis object a 1D array
+                    ax = ax.ravel()
+                    img = sunpy.map.Map(*self.filep)
+                    #set up dictionary for plotting data
+                    img_dict = {} 
+                    for l,p in self.wav: img_dict[p] = img[l]
+                #single image properties
+                else:
+                    fig,ax = plt.subplots(figsize=(self.sc*float(self.w0)/float(self.dpi),self.sc*float(self.h0)/float(self.dpi)))
+                    img = sunpy.map.Map(*self.filep)
+                    ax.set_axis_off()
+              
+                #universal image properties 
+                fig.set_dpi(self.dpi)
+                fig.subplots_adjust(left=0,bottom=0,right=1,top=1)
 
                 #return extent of image
                 #use the first image in the list if it is a composite image to get the image boundaries
@@ -320,7 +358,7 @@ class aia_mkimage:
                 elif ((self.w0 == self.h0) & (not self.cutout)):
                     txtx = (maxx-minx)*0.01
                     txty = (maxy-miny)*0.01
-                elif (self.cutout):
+                elif ((self.cutout) | (self.panel)):
                     txtx = (max(self.xlim)-min(self.xlim))*0.01+(min(self.xlim)-minx)
                     txty = (max(self.ylim)-min(self.ylim))*0.01+(min(self.ylim)-miny)
 
@@ -329,6 +367,11 @@ class aia_mkimage:
                 if self.color3:
                     ax.imshow(img3d,interpolation='none',origin='lower',extent=[minx,maxx,miny,maxy])
                     ax.text(minx+txtx,miny+txty,'AIA {0}/{1}/{2}'.format(*self.wav)+'- {0}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=50,fontweight='bold')
+                #loop through axis objects if panel
+                elif self.panel:
+                    for l,p in self.wav: ax[l].imshow(np.arcsinh(img_dict[p].data),interpolation='none',cmap=icmap[p],origin='lower',vmin=ivmin[p],vmax=ivmax[p],extent=[minx,maxx,miny,maxy])
+                    #put text in lower left axis
+                    ax[2].text(minx+txtx,miny+txty,'AIA {0}/{1}/{2}'.format(*self.wav)+'- {0}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=50,fontweight='bold')
                 else:
                     ax.imshow(np.arcsinh(img.data),interpolation='none',cmap=icmap,origin='lower',vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy])
                     ax.text(minx+txtx,miny+txty,'AIA {0} - {1}Z'.format(self.wav,img.date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=50,fontweight='bold')
@@ -448,7 +491,12 @@ class aia_mkimage:
         else:
             lev0 = img.meta['quallev0'] == 0
         #check level1 bitwise keywords (http://jsoc.stanford.edu/doc/keywords/AIA/AIA02840_K_AIA-SDO_FITS_Keyword_Document.pdf)
-            lev1 = np.binary_repr(img.meta['quality']) == '1000000000000000000000000000000'
+        #for synoptic 1024x1024
+            if self.synoptic:
+                lev1 = np.binary_repr(img.meta['quality']) == '1000000000000000000000000000000'
+            else:
+                #4096x4096
+                lev1 = img.meta['quality'] == 0
         #check that both levels pass and it is not a calibration file
             check = ((lev0) & (lev1))# & (calb)) 
     
