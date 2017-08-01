@@ -328,6 +328,8 @@ class aia_mkimage:
                     img3d[:,:,j] = prelim
                 #output png file
                 outfi = self.odir+'AIA_{0}_'.format(img[0].date.strftime('%Y%m%d_%H%M%S'))+'{0}_{1}_{2}.png'.format(*self.wav)
+                #observed time 
+                self.obs_time = img[0].date
                 #set scale for plotting 
                 self.scale = [self.img.scale[0].value,self.img.scale[1].value] # get x, y image scale 
             #set up panel plot parameters
@@ -345,6 +347,8 @@ class aia_mkimage:
                 outfi = self.odir+'AIA_{0}_'.format(img[0].date.strftime('%Y%m%d_%H%M%S'))+'{0}_{1}_{2}_{3}.png'.format(*self.wav)
                 #set scale for plotting 
                 self.scale = [self.img.scale[0].value,self.img.scale[1].value] # get x, y image scale 
+                #observed time 
+                self.obs_time = img[0].date
             else:
                 self.wav ='{0:4.0f}'.format( img.wavelength.value).replace(' ','0')
                 #use default color tables
@@ -354,6 +358,8 @@ class aia_mkimage:
                 outfi = self.odir+'AIA_{0}_'.format(img.date.strftime('%Y%m%d_%H%M%S'))+'{0}.png'.format(self.wav)
                 #set scale for plotting 
                 self.scale = [self.img.scale[0].value,self.img.scale[1].value] # get x, y image scale 
+                #observed time 
+                self.obs_time = img.date
 
 
             #set up subwindow limits if cutout set
@@ -419,15 +425,15 @@ class aia_mkimage:
                 #use color composite image if color3 set
                 if self.color3:
                     ax.imshow(img3d,interpolation='none',origin='lower',extent=[minx,maxx,miny,maxy])
-                    ax.text(minx+txtx,miny+txty,'AIA {0}/{1}/{2}'.format(*self.wav)+'- {0}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=50,fontweight='bold')
+                    ax.text(minx+txtx,miny+txty,'AIA {0}/{1}/{2}'.format(*self.wav)+'- {0}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=5000,fontweight='bold')
                 #loop through axis objects if panel
                 elif self.panel:
                     for l,p in enumerate(self.wav): ax[l].imshow(np.arcsinh(img_dict[p].data),interpolation='none',cmap=icmap[p],origin='lower',vmin=ivmin[p],vmax=ivmax[p],extent=[minx,maxx,miny,maxy])
                     #put text in lower left axis
-                    ax[2].text(minx+txtx,miny+txty,'AIA {0}/{1}/{2}'.format(*self.wav)+'- {0}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=50,fontweight='bold')
+                    ax[2].text(minx+txtx,miny+txty,'AIA {0}/{1}/{2}'.format(*self.wav)+'- {0}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=24,zorder=5000,fontweight='bold')
                 else:
                     ax.imshow(np.arcsinh(img.data),interpolation='none',cmap=icmap,origin='lower',vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy])
-                    ax.text(minx+txtx,miny+txty,'AIA {0} - {1}Z'.format(self.wav,img.date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=50,fontweight='bold')
+                    ax.text(minx+txtx,miny+txty,'AIA {0} - {1}Z'.format(self.wav,img.date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=5000,fontweight='bold')
                 #set limits for cutout
                 if self.cutout:
                     #loop through all if panel
