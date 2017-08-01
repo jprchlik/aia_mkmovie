@@ -35,7 +35,7 @@ class aia_mkimage:
     def __init__(self,dayarray,sday=False,eday=False,w0=1900.,h0=1200.,dpi=100.,sc=1.,
                  goes=False,goesdat=False,ace=False,aceadat=False,single=True,panel=False,
                  color3=False,time_stamp=True,odir='working/',cutout=False,
-                 img_scale=None,cx=0.,cy=0.,xlim=None,ylim=None,synoptic=False):
+                 img_scale=None,cx=0.,cy=0.,xlim=None,ylim=None,synoptic=False,rot_time=None):
 
         """
         Day array if 3 color goes in as RGB
@@ -100,21 +100,6 @@ class aia_mkimage:
         if not os.path.isdir(self.odir): os.mkdir(self.odir)
   
 
-        #check image x center
-        if isinstance(cx,(int,float)):
-            self.cx = cx
-        else:
-            sys.stdout.write('cx must be an integer or float (Assuming 0)')
-            self.cx = 0.0
-        
-        #check image y center
-        if isinstance(cy,(int,float)):
-            self.cy = cy
-        else:
-            sys.stdout.write('cy must be an integer or float (Assuming 0)')
-            self.cy = 0.0     
-
-
         #check format of acedat Table if it exits 
         if isinstance(aceadat,Table):
             self.aceadat = aceadat
@@ -174,6 +159,39 @@ class aia_mkimage:
         else:
             sys.stdout.write('cutout must be a boolean')
             sys.exit(1)
+
+
+        #check inserted rot_time time
+        if isinstance(rot_time,datetime):
+            self.rot_time = rot_time
+            self.rotation = True
+        elif isinstance(rot_time,str):
+            self.rot_time = datetime.strptime(rot_time,dfmt)
+            self.rotation = True
+        elif rot_time is None:
+            self.rot_time = rot_time
+            self.rotation = False
+        else:
+            sys.stdout.write('rot_time must be datetime object or formatted string')
+            sys.exit(1)
+
+
+
+        #check image x center
+        if isinstance(cx,(int,float)):
+            self.cx = cx
+        else:
+            sys.stdout.write('cx must be an integer or float (Assuming 0)')
+            self.cx = 0.0
+        
+        #check image y center
+        if isinstance(cy,(int,float)):
+            self.cy = cy
+        else:
+            sys.stdout.write('cy must be an integer or float (Assuming 0)')
+            self.cy = 0.0     
+
+ 
 
 
  
@@ -256,6 +274,29 @@ class aia_mkimage:
             sys.stdout.write('X and Y limits must be empty, lists, or numpy arrays')
             sys.exit(1)
 
+ 
+   #create window for plotting
+    def sub_window(self):
+
+      #3 color image
+       if self.color3:
+           self.scale = [self.img[0].scale[0].value,self.img[0].scale[1].value] # get x, y image scale
+       #single color image
+       else:
+           self.scale = [self.img.scale[0].value,self.img.scale[1].value] # get x, y image scale
+
+       #if rotation set get modify cx and cy values
+       if self.rotation:
+           from sunpy.physics.differential_rotation import rot_hpc
+           import astropy.units as u
+           #rotate start points
+           cx, cy = rot_hpc(self.cx*u.arcsec,self.cy*u.arcsec,self.rot_time,self.obs_time)
+           #update with new rotation values
+           self.cx, self.cy = cx.value,cy.value
+  
+
+       self.xlim = [self.cx-(self.scale[0]*self.w0/2.),self.cx+(self.scale[0]*self.w0/2.)]
+       self.ylim = [self.cy-(self.scale[1]*self.h0/2.),self.cy+(self.scale[1]*self.h0/2.)]
 
 
     #for j,i in enumerate(dayarray):
@@ -287,6 +328,8 @@ class aia_mkimage:
                     img3d[:,:,j] = prelim
                 #output png file
                 outfi = self.odir+'AIA_{0}_'.format(img[0].date.strftime('%Y%m%d_%H%M%S'))+'{0}_{1}_{2}.png'.format(*self.wav)
+                #set scale for plotting 
+                self.scale = [self.img[0].scale[0].value,self.img[0].scale[1].value] # get x, y image scale 
             #set up panel plot parameters
             elif self.panel:
                 ivmin = {}
@@ -300,6 +343,8 @@ class aia_mkimage:
                     ivmin[self.wav[j]] = self.img_scale[self.wav[j]][1]
                     ivmax[self.wav[j]] = self.img_scale[self.wav[j]][2]
                 outfi = self.odir+'AIA_{0}_'.format(img[0].date.strftime('%Y%m%d_%H%M%S'))+'{0}_{1}_{2}_{3}.png'.format(*self.wav)
+                #set scale for plotting 
+                self.scale = [self.img[0].scale[0].value,self.img[0].scale[1].value] # get x, y image scale 
             else:
                 self.wav ='{0:4.0f}'.format( img.wavelength.value).replace(' ','0')
                 #use default color tables
@@ -307,6 +352,12 @@ class aia_mkimage:
                 ivmin = self.img_scale[self.wav][1]
                 ivmax = self.img_scale[self.wav][2]
                 outfi = self.odir+'AIA_{0}_'.format(img.date.strftime('%Y%m%d_%H%M%S'))+'{0}.png'.format(self.wav)
+                #set scale for plotting 
+                self.scale = [self.img.scale[0].value,self.img.scale[1].value] # get x, y image scale 
+
+
+            #set up subwindow limits if cutout set
+            if self.cutout: self.sub_window()
 
             #see if output file already exists
             test = os.path.isfile(outfi)
