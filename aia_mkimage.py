@@ -293,8 +293,8 @@ class aia_mkimage:
            cx, cy = rot_hpc(self.cx*u.arcsec,self.cy*u.arcsec,self.rot_time,self.obs_time)
            #update with new rotation values
            self.cx, self.cy = cx.value,cy.value
-  
 
+       #set new plot limits
        self.xlim = [self.cx-(self.scale[0]*self.w0/2.),self.cx+(self.scale[0]*self.w0/2.)]
        self.ylim = [self.cy-(self.scale[1]*self.h0/2.),self.cy+(self.scale[1]*self.h0/2.)]
 
@@ -379,7 +379,7 @@ class aia_mkimage:
                     
                     #set up dictionary for plotting data
                     img_dict = {} 
-                    for l,p in self.wav: img_dict[p] = img[l]
+                    for l,p in enumerate(self.wav): img_dict[p] = img[l]
                 #single image properties
                 else:
                     fig,ax = plt.subplots(figsize=(self.sc*float(self.w0)/float(self.dpi),self.sc*float(self.h0)/float(self.dpi)))
@@ -422,7 +422,7 @@ class aia_mkimage:
                     ax.text(minx+txtx,miny+txty,'AIA {0}/{1}/{2}'.format(*self.wav)+'- {0}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=50,fontweight='bold')
                 #loop through axis objects if panel
                 elif self.panel:
-                    for l,p in self.wav: ax[l].imshow(np.arcsinh(img_dict[p].data),interpolation='none',cmap=icmap[p],origin='lower',vmin=ivmin[p],vmax=ivmax[p],extent=[minx,maxx,miny,maxy])
+                    for l,p in enumerate(self.wav): ax[l].imshow(np.arcsinh(img_dict[p].data),interpolation='none',cmap=icmap[p],origin='lower',vmin=ivmin[p],vmax=ivmax[p],extent=[minx,maxx,miny,maxy])
                     #put text in lower left axis
                     ax[2].text(minx+txtx,miny+txty,'AIA {0}/{1}/{2}'.format(*self.wav)+'- {0}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=50,fontweight='bold')
                 else:
@@ -430,11 +430,20 @@ class aia_mkimage:
                     ax.text(minx+txtx,miny+txty,'AIA {0} - {1}Z'.format(self.wav,img.date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=50,fontweight='bold')
                 #set limits for cutout
                 if self.cutout:
-                    ax.set_xlim(self.xlim)
-                    ax.set_ylim(self.ylim)
+                    #loop through all if panel
+                    if self.panel:
+                        for iax in ax:
+                            iax.set_xlim(self.xlim)
+                            iax.set_ylim(self.ylim)
+                            iax.set_axis_off()
+                        
+                    #if not panel use a single axis 
+                    else:
+                        ax.set_xlim(self.xlim)
+                        ax.set_ylim(self.ylim)
 
 
-                if self.goes:
+                if ((self.goes) & (not self.panel)):
                 #use the first image for goes and ace plotting
                     if isinstance(img,list): img = img[0] 
     #format string for date on xaxis
