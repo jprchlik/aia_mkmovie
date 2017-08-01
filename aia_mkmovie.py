@@ -484,7 +484,8 @@ class aia_mkmovie:
                      sc=self.sc,goes=self.goes,goesdat=self.goesdat,sday=self.start,eday=self.end,
                      img_scale=self.img_scale,cutout=self.cutout,
                      ace=self.wind,aceadat=self.aceadat,single=self.single,panel=self.panel,
-                     color3=self.color3,time_stamp=self.time_stamp,odir=self.sdir+'/working/',cx=self.cx,cy=self.cy,
+                     color3=self.color3,time_stamp=self.time_stamp,odir=self.sdir+'/working/',
+                     cx=self.cx,cy=self.cy,rotation=self.rotation,
                      xlim=self.xlim,ylim=self.ylim,synoptic=self.synoptic,rot_time=self.rot_time) for i in self.fits_files]
 
         #J. Prchlik 2016/10/06
