@@ -329,7 +329,7 @@ class aia_mkimage:
                 #output png file
                 outfi = self.odir+'AIA_{0}_'.format(img[0].date.strftime('%Y%m%d_%H%M%S'))+'{0}_{1}_{2}.png'.format(*self.wav)
                 #set scale for plotting 
-                self.scale = [self.img[0].scale[0].value,self.img[0].scale[1].value] # get x, y image scale 
+                self.scale = [self.img.scale[0].value,self.img.scale[1].value] # get x, y image scale 
             #set up panel plot parameters
             elif self.panel:
                 ivmin = {}
@@ -344,7 +344,7 @@ class aia_mkimage:
                     ivmax[self.wav[j]] = self.img_scale[self.wav[j]][2]
                 outfi = self.odir+'AIA_{0}_'.format(img[0].date.strftime('%Y%m%d_%H%M%S'))+'{0}_{1}_{2}_{3}.png'.format(*self.wav)
                 #set scale for plotting 
-                self.scale = [self.img[0].scale[0].value,self.img[0].scale[1].value] # get x, y image scale 
+                self.scale = [self.img.scale[0].value,self.img.scale[1].value] # get x, y image scale 
             else:
                 self.wav ='{0:4.0f}'.format( img.wavelength.value).replace(' ','0')
                 #use default color tables
@@ -370,11 +370,13 @@ class aia_mkimage:
 
                 #set up extra in stuff in plot if panel set
                 if self.panel:
-                    fig,ax = plt.subplots(figsize=(self.sc*float(self.w0)/float(self.dpi),self.sc*float(self.h0)/float(self.dpi)))
-                    fig.subplots_adjust(vspace=0.0001,hspace=0.0001)
+                    fig,ax = plt.subplots(figsize=(self.sc*float(self.w0)/float(self.dpi),self.sc*float(self.h0)/float(self.dpi)),nrows=2,ncols=2)
+                    #remove space between plots
+                    fig.subplots_adjust(wspace=0.0001,hspace=0.0001)
                     #make axis object a 1D array
                     ax = ax.ravel()
                     img = sunpy.map.Map(*self.filep)
+                    
                     #set up dictionary for plotting data
                     img_dict = {} 
                     for l,p in self.wav: img_dict[p] = img[l]
@@ -528,18 +530,30 @@ class aia_mkimage:
         check = True
     #Level0 quality flag equals 0 (0 means no issues)
         if isinstance(img,list):
+            #create an image object to get parameters from
+            self.img = img[0] 
+  
             #loop over all images
             for i in img:
                 #exit if check ever fails
                 if check:
                     lev0 = i.meta['quallev0'] == 0
                 #check level1 bitwise keywords (http://jsoc.stanford.edu/doc/keywords/AIA/AIA02840_K_AIA-SDO_FITS_Keyword_Document.pdf)
-                    lev1 = np.binary_repr(i.meta['quality']) == '1000000000000000000000000000000'
-                #check that both levels pass and it is not a calibration file
-                    check = ((lev0) & (lev1))# & (calb)) 
+                #for synoptic 1024x1024
+                    if self.synoptic:
+                        lev1 = np.binary_repr(img.meta['quality']) == '1000000000000000000000000000000'
+                    else:
+                   #4096x4096
+                       lev1 = i.meta['quality'] == 0
+                   #check that both levels pass and it is not a calibration file
+                       check = ((lev0) & (lev1))# & (calb)) 
+                #leave loop when check fails
                 else: 
                     continue
         else:
+            #create an image object to get parameters from
+            self.img = img 
+          
             lev0 = img.meta['quallev0'] == 0
         #check level1 bitwise keywords (http://jsoc.stanford.edu/doc/keywords/AIA/AIA02840_K_AIA-SDO_FITS_Keyword_Document.pdf)
         #for synoptic 1024x1024
