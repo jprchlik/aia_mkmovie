@@ -34,7 +34,7 @@ from aia_mkimage import aia_mkimage
 class aia_mkmovie:
 
     #initialize aia_mkmovie
-    def __init__(self,start,end,wav,cadence='6m',w0=1900,h0=1144,dpi=300,usehv = False,panel=False,color3=False,select=False,videowall=True,nproc=2,goes=False,wind=False,x0=0.0,y0=0.0,archive="/data/SDO/AIA/synoptic/",dfmt = '%Y/%m/%d %H:%M:%S',outf=True,synoptic=True,odir='working/',frate=10,time_stamp=True,cx=0.0,cy=0.0,prompt=False,cutout=False,rotation=False,rot_time=None):
+    def __init__(self,start,end,wav,cadence='6m',w0=1900,h0=1144,dpi=300,usehv = False,panel=False,color3=False,select=False,videowall=True,nproc=2,goes=False,wind=False,x0=0.0,y0=0.0,archive="/data/SDO/AIA/synoptic/",dfmt = '%Y/%m/%d %H:%M:%S',outf=True,synoptic=True,odir='working/',frate=10,time_stamp=True,cx=0.0,cy=0.0,prompt=False,cutout=False,rotation=False,rot_time=None,download=False,local=False,email=None):
         """ 
         Take 3 color input of R,G,B for wavelength
 
@@ -178,6 +178,20 @@ class aia_mkmovie:
             sys.stdout.write('rotation must be a boolean')
             sys.exit(1)
 
+        #check if download flag is set (Default = False)
+        if isinstance(download,bool): 
+            self.download = download
+        else:
+            sys.stdout.write('download must be a boolean')
+            sys.exit(1)
+
+        #check if local flag is set (Default = False)
+        if isinstance(local,bool): 
+            self.local = local
+        else:
+            sys.stdout.write('local must be a boolean')
+            sys.exit(1)
+
 
        
         #check inserted rot_time time
@@ -190,6 +204,21 @@ class aia_mkmovie:
         else:
             sys.stdout.write('rot_time must be datetime object or formatted string')
             sys.exit(1)
+
+
+        #check inserted email
+        if isinstance(email,str):
+            self.email = email
+        elif email is None:
+            self.email = email
+            if download: 
+                sys.stdout.write('email must be supplied if download is True')
+                sys.exit(1)
+        else:
+            sys.stdout.write('email must be a string')
+            sys.exit(1)
+
+
 
 
 
@@ -333,7 +362,6 @@ class aia_mkmovie:
             outs = pool2.map(get_file,forpool)
             pool2.close()
 
-#datasources = hv.get_data_sources()
 
 
         #video wall ratio
@@ -395,7 +423,68 @@ class aia_mkmovie:
             #create datetime array
             self.aceadat['time_dt'] = [datetime(int(i['YR']),int(i['MO']),int(i['DA']))+dt(seconds=i['Secs_1']) for i in self.aceadat]
         
+        #download files locally
+        if self.download:
+            self.run_download()
+        elif self.local:
+            self.gather_local()
+        else:
+            self.scream() # use SDO archive to search
 
+
+
+
+    #run file download
+    def run_download(self):
+        import aia_download_files as adf
+        #create an archive in the download directory
+        self.archive = self.sdir+'/raw/'
+        fobj = adf.download_files(self.start,self.end,self.wav,self.cadence,email=self.email,odir=self.archive,max_con=self.nproc)
+        fobj.get_drms_files()
+  
+        #check the downloaded files
+        self.gather_local()
+
+
+    #make sure the input wavelength matches the searched wavelength
+    def check_wavelength(self,fil,wav):
+        from astropy.io import fits
+        for i in fil:
+            dat = fits.open(i)
+            if dat[1].header['wavelnth'] != int(wav): fil.remove(i)
+        return fil
+
+    def gather_local(self):
+        from glob import glob
+        #Singular search if only one wavelength specified
+        if self.single:
+            fits_files = glob(self.archive+'*'+str(int(self.wav))+'*')
+            if len(fits_files) < 1.:
+                sys.stdout.write('No AIA Files Found')
+                sys.exit(1)
+            else:
+                #make sure the wavelength header agrees with found value
+                fits_files = self.check_wavelength(fits_files,self.wav)
+                self.fits_files = fits_files
+
+        #if multiple wavelengths loop over all wavelengths
+        elif ((self.color3) | (self.panel)):
+            self.fits_files_temp = []
+           #loop over all wavelengths in array
+            for i in self.wav:
+                fits_files = glob(self.archive+'*'+str(int(i))+'*')
+                if len(fits_files) < 1.:
+                    sys.stdout.write('No AIA Files Found')
+                    sys.exit(1)
+                else:
+                #make sure the wavelength header agrees with found value
+                    fits_files = self.check_wavelength(fits_files,i)
+                    self.fits_files_temp.append(fits_files)
+            #transpose list array
+            self.fits_files = map(list,zip(*self.fits_files_temp))
+
+
+    def scream(self):
 
         #J. Prchlik 2016/10/06
         #Updated version calls local files
@@ -412,7 +501,7 @@ class aia_mkmovie:
         paths = src.get_paths(date=self.end.strftime("%Y-%m-%d"), time=self.end.strftime("%H:%M:%S"),span=sendspan)
 
 
-        #Singular search if only one wavelength specificied
+        #Singular search if only one wavelength specified
         if self.single:
             fits_files = src.get_filelist(date=self.end.strftime("%Y-%m-%d"),time=self.end.strftime("%H:%M:%S"),span=sendspan,wavelnth=self.wav)
             qfls, qtms = src.run_quality_check(synoptic=self.synoptic)
@@ -508,8 +597,14 @@ class aia_mkmovie:
 
     def run_all(self):
         
+        #get fits files
         self.gather_files()
+
+
+        #if prompt set bring up a prompt
         if self.prompt: self.init_prompt()
+
+        #run image creation
         self.create_images_movie()
  
 
