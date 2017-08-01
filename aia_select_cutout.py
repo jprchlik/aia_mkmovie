@@ -442,6 +442,7 @@ class gui_c(Tk.Frame):
        plt.clf()
        plt.close()
        self.quit()
+       self.parent.destroy()
 
 
 #Command to increase the order to plot new aia image
