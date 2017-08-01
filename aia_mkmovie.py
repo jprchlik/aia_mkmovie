@@ -1,4 +1,4 @@
-__version__ = "0.0.1 (2017/07/24)"
+o_version__ = "0.0.1 (2017/07/24)"
 __authors__ = ['Jakub Prchlik <jakub.prchlik@cfa.harvard.edu>']
 __email__   = "jakub.prchlik@cfa.harvard.edu"
 
@@ -34,7 +34,7 @@ from aia_mkimage import aia_mkimage
 class aia_mkmovie:
 
     #initialize aia_mkmovie
-    def __init__(self,start,end,wav,cadence='6m',w0=1900,h0=1144,dpi=300,usehv = False,panel=False,color3=False,select=False,videowall=True,nproc=2,goes=False,wind=False,x0=0.0,y0=0.0,archive="/data/SDO/AIA/synoptic/",dfmt = '%Y/%m/%d %H:%M:%S',outf=True,synoptic=True,odir='working/',frate=10,time_stamp=True,cx=0.0,cy=0.0,prompt=False,cutout=False,rotataion=False):
+    def __init__(self,start,end,wav,cadence='6m',w0=1900,h0=1144,dpi=300,usehv = False,panel=False,color3=False,select=False,videowall=True,nproc=2,goes=False,wind=False,x0=0.0,y0=0.0,archive="/data/SDO/AIA/synoptic/",dfmt = '%Y/%m/%d %H:%M:%S',outf=True,synoptic=True,odir='working/',frate=10,time_stamp=True,cx=0.0,cy=0.0,prompt=False,cutout=False,rotation=False,rot_time=None):
         """ 
         Take 3 color input of R,G,B for wavelength
 
@@ -172,11 +172,27 @@ class aia_mkmovie:
             sys.exit(1)
 
         #check if rotation flag is set (Default = False)
-        if isinstance(time_stamp,bool): 
-            self.time_stamp = time_stamp
+        if isinstance(rotation,bool): 
+            self.rotation = rotation
         else:
             sys.stdout.write('rotation must be a boolean')
             sys.exit(1)
+
+
+       
+        #check inserted rot_time time
+        if isinstance(rot_time,datetime):
+            self.rot_time = rot_time
+        elif isinstance(rot_time,str):
+            self.rot_time = datetime.strptime(rot_time,dfmt)
+        elif rot_time is None:
+            self.rot_time = rot_time
+        else:
+            sys.stdout.write('rot_time must be datetime object or formatted string')
+            sys.exit(1)
+
+
+
 
         #check if prompt flag is set (Default = False)
         if isinstance(prompt,bool): 
@@ -287,6 +303,13 @@ class aia_mkmovie:
         else: 
             for i,j in enumerate(self.wav):  wavapp = wavapp+'_{0}'.format(j)
         self.sdir = self.start.date().strftime('%Y%m%d_%H%M')+wavapp
+
+
+
+        # if rotation is set and prompt is not set rot_time must be set
+        if ((rot_time is None) & (not self.prompt) &(self.rotation )):
+            sys.stdout.write('Rotation time must be set if rotation is set and prompt is not')
+            sys.exit(1)
 
 #create directories without erroring if they already exist c
     def create_dir(self,dirs):
@@ -455,12 +478,14 @@ class aia_mkmovie:
 
 
         #create a list of class objects
+        #rotate x, y if rotation is set
+        #else do the normal thing
         image_list = [aia_mkimage(i,w0=self.w0,h0=self.h0,dpi=self.dpi,
-                      sc=self.sc,goes=self.goes,goesdat=self.goesdat,sday=self.start,eday=self.end,
-                      img_scale=self.img_scale,cutout=self.cutout,
-                      ace=self.wind,aceadat=self.aceadat,single=self.single,panel=self.panel,
-                      color3=self.color3,time_stamp=self.time_stamp,odir=self.sdir+'/working/',
-                      xlim=self.xlim,ylim=self.ylim,synoptic=self.synoptic) for i in self.fits_files]
+                     sc=self.sc,goes=self.goes,goesdat=self.goesdat,sday=self.start,eday=self.end,
+                     img_scale=self.img_scale,cutout=self.cutout,
+                     ace=self.wind,aceadat=self.aceadat,single=self.single,panel=self.panel,
+                     color3=self.color3,time_stamp=self.time_stamp,odir=self.sdir+'/working/',
+                     xlim=self.xlim,ylim=self.ylim,synoptic=self.synoptic,rot_time=self.rot_time) for i in self.fits_files]
 
         #J. Prchlik 2016/10/06
         #Switched jp2 to fits
