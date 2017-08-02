@@ -712,8 +712,8 @@ class gui_c(Tk.Frame):
                 if ((order > 0) & (order <= self.ordermax)):
                     m = 1
                     self.order = order
-                    self.spec_set()
-                    self.spec_plot()
+                    self.aia_set()
+                    self.aia_plot()
                 else:
 #Error order is out of range
                     self.error = 3
