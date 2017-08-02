@@ -430,7 +430,7 @@ class aia_mkimage:
                 elif self.panel:
                     for l,p in enumerate(self.wav): ax[l].imshow(np.arcsinh(img_dict[p].data),interpolation='none',cmap=icmap[p],origin='lower',vmin=ivmin[p],vmax=ivmax[p],extent=[minx,maxx,miny,maxy])
                     #put text in lower left axis
-                    ax[2].text(minx+txtx,miny+txty,'AIA {0}/{1}/{2}'.format(*self.wav)+'- {0}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=24,zorder=5000,fontweight='bold')
+                    ax[2].text(minx+txtx,miny+txty,'AIA {0}/{1}/{2}/{3}'.format(*self.wav)+'- {0}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=24,zorder=5000,fontweight='bold')
                 else:
                     ax.imshow(np.arcsinh(img.data),interpolation='none',cmap=icmap,origin='lower',vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy])
                     ax.text(minx+txtx,miny+txty,'AIA {0} - {1}Z'.format(self.wav,img.date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=5000,fontweight='bold')
