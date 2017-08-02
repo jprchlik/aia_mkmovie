@@ -174,6 +174,7 @@ class download_files:
         #the full query
         self.qstr = self.t_qstr+self.w_qstr+self.s_qstr
 
+        #IF ERRORS WITH URL ERROR IT IS BECAUSE THE DOWNLOAD FILE SIZE IS TOO LARGE
         #export  the data file list 
         self.expt = client.export(self.qstr)
 #create an array of indexes to download
