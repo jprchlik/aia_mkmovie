@@ -449,10 +449,15 @@ class aia_mkmovie:
     #make sure the input wavelength matches the searched wavelength
     def check_wavelength(self,fil,wav):
         from astropy.io import fits
+        new_fil = []
         for i in fil:
             dat = fits.open(i)
-            if dat[1].header['wavelnth'] != int(wav): fil.remove(i)
-        return fil
+            if dat[1].header['wavelnth'] == int(wav): new_fil.append(i)
+        return new_fil
+
+    #Create a cadence from time list
+    def check_cadence(self,fil,wav):
+        print 'Feature not created yet'
 
     def gather_local(self):
         from glob import glob
