@@ -3,9 +3,9 @@ __authors__ = ['Jakub Prchlik <jakub.prchlik@cfa.harvard.edu>']
 __email__   = "jakub.prchlik@cfa.harvard.edu"
 
 
-#import matplotlib
-##fixes multiprocess issue
-#matplotlib.use('agg')
+import matplotlib
+##fixes multiprocess issue (scrambled text in images)
+matplotlib.use('agg',warn=False,force=True)
 import sys
 
 try:
@@ -24,7 +24,6 @@ import numpy as np
 from datetime import date,datetime
 from datetime import timedelta as dt
 import matplotlib.pyplot as plt
-plt.switch_backend('agg')
 from mpl_toolkits.axes_grid.inset_locator import inset_axes
 from astropy.io import ascii
 from astropy.table import vstack,Table,join
