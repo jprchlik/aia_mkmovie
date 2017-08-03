@@ -331,7 +331,7 @@ class aia_mkmovie:
         #loop over all wavelengths if there is more than 1 value in the list
         else: 
             for i,j in enumerate(self.wav):  wavapp = wavapp+'_{0}'.format(j)
-        self.sdir = self.start.date().strftime('%Y%m%d_%H%M')+wavapp
+        self.sdir = self.start.strftime('%Y%m%d_%H%M')+wavapp
 
 
 
@@ -659,16 +659,19 @@ class aia_mkmovie:
         mo.create_movie()
 
     def run_all(self):
+        """
+        Runs program from beginning to end based on input parameters
+        """
         
         #get fits files
         self.gather_files()
 
 
-####        #if prompt set bring up a prompt
-####        if self.prompt: self.init_prompt()
-####
-####        #run image creation
-####        self.create_images_movie()
+        #if prompt set bring up a prompt
+        if self.prompt: self.init_prompt()
+
+        #run image creation
+        self.create_images_movie()
  
 
 
