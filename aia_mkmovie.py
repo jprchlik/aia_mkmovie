@@ -85,7 +85,7 @@ class aia_mkmovie:
         if isinstance(outf,str):
             self.outf = outf
         elif outf: 
-            self.outf = self.start.date().strftime('%Y%m%d_%H%M')
+            self.outf = self.start.strftime('%Y%m%d_%H%M')
         else:
             sys.stdout('outf must be a string or undefined')
             sys.exit(1)
@@ -426,6 +426,7 @@ class aia_mkmovie:
         #download files locally
         if self.download:
             self.run_download()
+        #use a local directory of files
         elif self.local:
             self.gather_local()
         else:
@@ -436,6 +437,9 @@ class aia_mkmovie:
 
     #run file download
     def run_download(self):
+        """
+        Import module/class to download fits files from JSOC
+        """
         import aia_download_files as adf
         #create an archive in the download directory
         self.archive = self.sdir+'/raw/'
@@ -448,19 +452,73 @@ class aia_mkmovie:
 
     #make sure the input wavelength matches the searched wavelength
     def check_wavelength(self,fil,wav):
+        """
+        Check wavelength and cadence of images
+        """
         from astropy.io import fits
+
         new_fil = []
+        fil_dat = []
+        datefmt = '%Y-%m-%dT%H%M%SZ'
+        #retrieve file wavelength and observation time
         for i in fil:
-            dat = fits.open(i)
-            if dat[1].header['wavelnth'] == int(wav): new_fil.append(i)
-        return new_fil
+            #try assuming download format of jsoc files
+            try:
+                date = datetime.strptime(i.strip(self.archive).split('.')[2],datefmt)
+                wave = i.strip(self.archive).split('.')[3]
+                if int(wave) == int(wav):
+                    new_fil.append(i)
+                    fil_dat.append(date)
+            #else open the fits file and read information from the header
+            except:
+                data = fits.open(i)
+                date = datetime.strptime(data[1].header['T_OBS'],datefmt)
+                wave = data[1].header['wavelnth']
+                if wav == int(wav):
+                    new_fil.append(i)
+                    fil_dat.append(date)
+
+        #convert fil_dat to numpy time array 
+        timelist = np.array(fil_dat)
+ 
+        final_list = [] #list of index to keep for image creation
+        for p in self.real_cad: #loop over all cadence values to find best array values
+            k = np.abs(timelist-p)
+            rindex, = np.where(k == k.min()) #get the nonzero array index value
+            final_list.append(new_fil[rindex[0]])
+
+        return final_list
+
+
+#retrieve desired cadence from file list
+    def des_cad(self,start,end,delta):
+        """Create an array from start to end with desired cadence"""
+        curr = start
+        while curr < end:
+            yield curr
+            curr += delta
+
 
     #Create a cadence from time list
-    def check_cadence(self,fil,wav):
-        print 'Feature not created yet'
+    def create_cadence(self):
+    #turn cadence into seconds
+        if self.cadence[-1] == 's': self.cad = float(self.cadence[:-1])
+        elif self.cadence[-1] == 'm': self.cad = 60.*float(self.cadence[:-1])
+        elif self.cadence[-1] == 'h': self.cad = 3600.*float(self.cadence[:-1])
+        elif self.cadence[-1] == 'd': self.cad = 24.*3600.*float(self.cadence[:-1])
+      
+
+    #desired cadence for the observations
+        self.real_cad = [result for result in self.des_cad(self.start,self.end,dt(seconds=self.cad))]
+
+
 
     def gather_local(self):
         from glob import glob
+
+        #create a list of desired cadences
+        self.create_cadence()
+
         #Singular search if only one wavelength specified
         if self.single:
             fits_files = glob(self.archive+'*'+str(int(self.wav))+'*')
@@ -606,11 +664,11 @@ class aia_mkmovie:
         self.gather_files()
 
 
-        #if prompt set bring up a prompt
-        if self.prompt: self.init_prompt()
-
-        #run image creation
-        self.create_images_movie()
+####        #if prompt set bring up a prompt
+####        if self.prompt: self.init_prompt()
+####
+####        #run image creation
+####        self.create_images_movie()
  
 
 
