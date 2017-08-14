@@ -252,8 +252,12 @@ class aia_mkimage:
 
 
         #check proposed x and y limits
-        if ((xlim is None) & (ylim is None)):
+        if ((xlim is None) & (ylim is None) & (not self.rotation)):
             self.cutout = False
+        #if you are rotating assume a cut out (no reason to rotate with full sun)
+        if (self.rotation):
+            self.cutout = True 
+        #make sure 
         #make sure 
         elif ((xlim is not None) & (isinstance(xlim,(np.ndarray,list))) & (ylim is not None) & (isinstance(ylim,(np.ndarray,list)))):
             for i in xlim:
