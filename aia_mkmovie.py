@@ -472,9 +472,9 @@ class aia_mkmovie:
             #else open the fits file and read information from the header
             except:
                 data = fits.open(i)
-                date = datetime.strptime(data[1].header['T_OBS'],datefmt)
+                date = datetime.strptime(data[1].header['T_OBS'].split('.')[0], '%Y-%m-%dT%H:%M:%S')
                 wave = data[1].header['wavelnth']
-                if wav == int(wav):
+                if int(wave) == int(wav):
                     new_fil.append(i)
                     fil_dat.append(date)
 
