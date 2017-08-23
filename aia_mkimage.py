@@ -152,6 +152,14 @@ class aia_mkimage:
             sys.stdout.write('w0 must be an integer or float')
             sys.exit(1)
 
+        #rotate image if h0 > w0
+        self.flip_image = False
+        #Can do with out checking since we already checked w0,h0 are numbers
+        if h0 > w0:
+            self.h0 = w0
+            self.w0 = h0
+            self.flip_image = True
+
        #check if cutout flag is set (Default = False)
         if isinstance(cutout,bool):
             self.cutout = cutout
@@ -265,14 +273,14 @@ class aia_mkimage:
                     sys.stdout.write('Individual x values must be float or int')
                     sys.exit(1)
             #if passes set xlim
-            self.xlim = xlim
+            #self.xlim = xlim
 
             for i in ylim:
                 if not isinstance(i,(float,int)):
                     sys.stdout.write('Individual y values must be float or int')
                     sys.exit(1)
             #if passes set ylim
-            self.ylim = ylim
+            #self.ylim = ylim
         else: 
             sys.stdout.write('X and Y limits must be empty, lists, or numpy arrays')
             sys.exit(1)
@@ -298,8 +306,13 @@ class aia_mkimage:
            self.cx, self.cy = cx.value,cy.value
 
        #set new plot limits
-       self.xlim = [self.cx-(self.scale[0]*self.w0/2.),self.cx+(self.scale[0]*self.w0/2.)]
-       self.ylim = [self.cy-(self.scale[1]*self.h0/2.),self.cy+(self.scale[1]*self.h0/2.)]
+       #flip x and y values if h0>w0
+       if self.flip_image:
+           self.xlim = [self.cy-(self.scale[0]*self.w0/2.),self.cy+(self.scale[0]*self.w0/2.)]
+           self.ylim = [self.cx-(self.scale[1]*self.h0/2.),self.cx+(self.scale[1]*self.h0/2.)]
+       else:
+           self.xlim = [self.cx-(self.scale[0]*self.w0/2.),self.cx+(self.scale[0]*self.w0/2.)]
+           self.ylim = [self.cy-(self.scale[1]*self.h0/2.),self.cy+(self.scale[1]*self.h0/2.)]
 
 
     #for j,i in enumerate(dayarray):
@@ -328,7 +341,12 @@ class aia_mkimage:
                     #replace out of bounds points
                     prelim[prelim < 0.] = 0.
                     prelim[prelim > 1.] = 1.
-                    img3d[:,:,j] = prelim
+   
+                    #if flipped image flip the x,y values in prelim
+                    if self.flip_image:
+                        img3d[:,:,j] = prelim.T
+                    else:
+                        img3d[:,:,j] = prelim
                 #output png file
                 outfi = self.odir+'AIA_{0}_'.format(img[0].date.strftime('%Y%m%d_%H%M%S'))+'{0}_{1}_{2}.png'.format(*self.wav)
                 #observed time 
@@ -424,18 +442,21 @@ class aia_mkimage:
                     txtx = (max(self.xlim)-min(self.xlim))*0.01+(min(self.xlim)-minx)
                     txty = (max(self.ylim)-min(self.ylim))*0.01+(min(self.ylim)-miny)
 
+                #set the origin location
+                origin = 'lower'
+
         #plot the image in matplotlib
                 #use color composite image if color3 set
                 if self.color3:
-                    ax.imshow(img3d,interpolation='none',origin='lower',extent=[minx,maxx,miny,maxy])
+                    ax.imshow(img3d,interpolation='none',origin=origin,extent=[minx,maxx,miny,maxy],aspect='auto')
                     ax.text(minx+txtx,miny+txty,'AIA {0}/{1}/{2}'.format(*self.wav)+'- {0}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=5000,fontweight='bold')
                 #loop through axis objects if panel
                 elif self.panel:
-                    for l,p in enumerate(self.wav): ax[l].imshow(np.arcsinh(img_dict[p].data),interpolation='none',cmap=icmap[p],origin='lower',vmin=ivmin[p],vmax=ivmax[p],extent=[minx,maxx,miny,maxy])
+                    for l,p in enumerate(self.wav): ax[l].imshow(np.arcsinh(img_dict[p].data),interpolation='none',cmap=icmap[p],origin=origin,vmin=ivmin[p],vmax=ivmax[p],extent=[minx,maxx,miny,maxy],aspect='auto')
                     #put text in lower left axis
                     ax[2].text(minx+txtx,miny+txty,'AIA {0}/{1}/{2}/{3}'.format(*self.wav)+'- {0}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=24,zorder=5000,fontweight='bold')
                 else:
-                    ax.imshow(np.arcsinh(img.data),interpolation='none',cmap=icmap,origin='lower',vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy])
+                    ax.imshow(np.arcsinh(img.data),interpolation='none',cmap=icmap,origin=origin,vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy],aspect='auto')
                     ax.text(minx+txtx,miny+txty,'AIA {0} - {1}Z'.format(self.wav,img.date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=5000,fontweight='bold')
                 #set limits for cutout
                 if self.cutout:
@@ -588,23 +609,30 @@ class aia_mkimage:
     #J. Prchlik 2016/10/11
     #Added to give physical coordinates
     def img_extent(self,img):
-    # get the image coordinates in pixels
+        # get the image coordinates in pixels
         px0 = img.meta['crpix1']
         py0 = img.meta['crpix2']
-    # get the image coordinates in arcsec 
+        # get the image coordinates in arcsec 
         ax0 = img.meta['crval1']
         ay0 = img.meta['crval2']
-    # get the image scale in arcsec 
+        # get the image scale in arcsec 
         axd = img.meta['cdelt1']
         ayd = img.meta['cdelt2']
-    #get the number of pixels
+        #get the number of pixels
         tx,ty = img.data.shape
-    #get the max and min x and y values
-        minx,maxx = px0-tx,tx-px0
-        miny,maxy = py0-ty,ty-py0
-    #convert to arcsec
-        maxx,minx = maxx*axd,minx*axd
-        maxy,miny = maxy*ayd,miny*ayd
+
+        #get the max and min x and y values
+        pminx,pmaxx = 0.-px0,tx-px0
+        pminy,pmaxy = 0.-py0,ty-py0
+
+        #convert to arcsec
+        #Also flip the x and y values if h0 > w0
+        if self.flip_image:
+            maxy,miny = ax0+pmaxx*axd,ax0+pminx*axd
+            maxx,minx = ay0+pmaxy*ayd,ay0+pminy*ayd
+        else:
+            maxx,minx = ax0+pmaxx*axd,ax0+pminx*axd
+            maxy,miny = ay0+pmaxy*ayd,ay0+pminy*ayd
     
         return maxx,minx,maxy,miny
         
