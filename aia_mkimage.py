@@ -452,11 +452,16 @@ class aia_mkimage:
                     ax.text(minx+txtx,miny+txty,'AIA {0}/{1}/{2}'.format(*self.wav)+'- {0}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=5000,fontweight='bold')
                 #loop through axis objects if panel
                 elif self.panel:
-                    for l,p in enumerate(self.wav): ax[l].imshow(np.arcsinh(img_dict[p].data),interpolation='none',cmap=icmap[p],origin=origin,vmin=ivmin[p],vmax=ivmax[p],extent=[minx,maxx,miny,maxy],aspect='auto')
+                    if self.flip_image:
+                        for l,p in enumerate(self.wav): ax[l].imshow(np.arcsinh(img_dict[p].data.T),interpolation='none',cmap=icmap[p],origin=origin,vmin=ivmin[p],vmax=ivmax[p],extent=[minx,maxx,miny,maxy],aspect='auto')
+                    else:
+                        for l,p in enumerate(self.wav): ax[l].imshow(np.arcsinh(img_dict[p].data),interpolation='none',cmap=icmap[p],origin=origin,vmin=ivmin[p],vmax=ivmax[p],extent=[minx,maxx,miny,maxy],aspect='auto')
                     #put text in lower left axis
                     ax[2].text(minx+txtx,miny+txty,'AIA {0}/{1}/{2}/{3}'.format(*self.wav)+'- {0}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=24,zorder=5000,fontweight='bold')
                 else:
-                    ax.imshow(np.arcsinh(img.data),interpolation='none',cmap=icmap,origin=origin,vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy],aspect='auto')
+                
+                    if self.flip_image: ax.imshow(np.arcsinh(img.data.T),interpolation='none',cmap=icmap,origin=origin,vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy],aspect='auto')
+                    else: ax.imshow(np.arcsinh(img.data),interpolation='none',cmap=icmap,origin=origin,vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy],aspect='auto')
                     ax.text(minx+txtx,miny+txty,'AIA {0} - {1}Z'.format(self.wav,img.date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=5000,fontweight='bold')
                 #set limits for cutout
                 if self.cutout:
