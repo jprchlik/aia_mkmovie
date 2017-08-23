@@ -255,7 +255,7 @@ class aia_mkimage:
         if ((xlim is None) & (ylim is None) & (not self.rotation)):
             self.cutout = False
         #if you are rotating assume a cut out (no reason to rotate with full sun)
-        if (self.rotation):
+        elif (self.rotation):
             self.cutout = True 
         #make sure 
         #make sure 
