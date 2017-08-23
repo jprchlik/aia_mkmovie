@@ -340,6 +340,12 @@ class aia_mkmovie:
             sys.stdout.write('Rotation time must be set if rotation is set and prompt is not')
             sys.exit(1)
 
+        #exit if both color3 and panel set
+        if ((self.color3) & (self.panel)):
+            sys.stdout.write('Both color3 and panel booleans cannot be set to True')
+            sys.exit(1)
+            
+       
 #create directories without erroring if they already exist c
     def create_dir(self,dirs):
         try:
@@ -600,7 +606,7 @@ class aia_mkmovie:
 
 
         #create list of files based roughly on time (indices 0-3 are different wavelengths at roughly the same time)
-        if self.panel: templist = reduce(lambda x,y: x+y, self.fits_files)
+        if (self.panel): templist = reduce(lambda x,y: x+y, self.fits_files)
         else: templist = self.fits_files
 
         #init gui instance
@@ -654,7 +660,7 @@ class aia_mkmovie:
 
 
         #create movie object
-        mo =create_movie(odir = self.sdir+'/final/',pdir = self.sdir+'/working/', ext = 'png', w0 = self.w0, h0=self.h0,frate=self.frate,outmov=self.outf)
+        mo =create_movie(odir = self.sdir+'/final/',pdir = self.sdir+'/working/', ext = 'png', w0 = int(self.w0), h0=int(self.h0),frate=self.frate,outmov=self.outf)
         #run movie object
         mo.create_movie()
 
