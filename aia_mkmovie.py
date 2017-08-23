@@ -1,4 +1,4 @@
-__version__ = "0.0.1 (2017/07/24)"
+__version__ = "0.1.0 (2017/07/24)"
 __authors__ = ['Jakub Prchlik <jakub.prchlik@cfa.harvard.edu>']
 __email__   = "jakub.prchlik@cfa.harvard.edu"
 
@@ -34,10 +34,139 @@ from aia_mkimage import aia_mkimage
 class aia_mkmovie:
 
     #initialize aia_mkmovie
-    def __init__(self,start,end,wav,cadence='6m',w0=1900,h0=1144,dpi=300,usehv = False,panel=False,color3=False,select=False,videowall=True,nproc=2,goes=False,wind=False,x0=0.0,y0=0.0,archive="/data/SDO/AIA/synoptic/",dfmt = '%Y/%m/%d %H:%M:%S',outf=True,synoptic=True,odir='working/',frate=10,time_stamp=True,cx=0.0,cy=0.0,prompt=False,cutout=False,rotation=False,rot_time=None,download=False,local=False,email=None):
+    def __init__(self,start,end,wav,cadence='6m',w0=1900,h0=1144,dpi=300,usehv = False,
+                 panel=False,color3=False,select=False,videowall=True,nproc=2,goes=False,wind=False,
+                 archive="/data/SDO/AIA/synoptic/",dfmt = '%Y/%m/%d %H:%M:%S',
+                 outf=True,synoptic=False,odir='working/',frate=10,time_stamp=True,cx=0.0,cy=0.0,
+                 prompt=False,cutout=False,rotation=False,rot_time=None,download=False,
+                 local=False,email=None):
         """ 
-        Take 3 color input of R,G,B for wavelength
+        Return an object with parameter to download data, create images, and create a movie
 
+        Parameters
+        ----------
+        start : single string or datetime object
+            The start time over which to create the movie.
+            The argument may be a string or datetime object.
+            If start is a string then the string must be in
+            the same form as the dfmt parameter (dfmt parameter 
+            default = %Y/%m/%d %H:%M:%S)
+        end   : single string or datetime object
+            The end time over which to create the movie.
+            The argument may be a string or datetime object.
+            If end is a string then the string must be in
+            the same form as the dfmt parameter (dfmt parameter 
+            default = %Y/%m/%d %H:%M:%S)
+        wav   : float, string, or array-like
+            The wavelengths to use in the movie.
+            Use a single float or string when making a movie of
+            a single wavelength (e.g. 171).
+            Use an array with 3 elements if making a RGB movie.
+            The 3 wavelength array must be sort R,G,B (e.g. 
+            [304,193,171]). Also, set optional parameter color3=True. 
+        cadence: string, int or float, optional 
+            The sampling frequency for downloading and image creation.
+            If cadence is an int or float the program assumes the 
+            input cadence is in seconds. However, if one passes a 
+            string then the cadence can be set in seconds (s),
+            minutes (m), hours (h), or days (d). For example you may 
+            set with cadence = '6h'. Default = '6m'
+        w0: int or float, optional
+            Width of the movie in pixels. If the height (h0) is larger than
+            w0 the program will switch the two parameters on output. 
+            However, it will also transpose the x and y axes, which allows 
+            for rotated images and movies. Default = 1900
+        h0: int or float, optional 
+            Height of the movie in pixels. If h0 is larger than the
+            width (w0) the program witll switch the two parameters on
+            output. However, it will also transpose the x and y axies,
+            which allows for rotated images and movies. Default = 1144
+        dpi: int or float, optional
+            Dots per inch in the output images. Default = 300.
+        usehv: boolean, optional 
+            Use helioviewer to download images (Currently not implemented)
+        panel: boolean, optional
+            Make a 4 panel plot. If panel set to True then color3 must be 
+            False and the wavelength list must be 4 wavelengths long.
+            The wav list has the following format [top right, top left,
+            bottom right, bottom left]. Default = False
+        color3 : boolean, optional
+            Create a 3 color image. If color3 set to True panel must be
+            False and the wavelength list must be 4 wavelengths long.
+            The wav list has the following format [R, G, B]. Default =
+            False.
+        select: boolean, optional
+            Select region of sun to focus on for the movie. If True
+            the program will launch a GUI to manually select a region
+            and set the color table
+        videowall: boolean, optional
+            Use the videowall height and width. Overrides setting h0 and w0.
+        nproc:  int, optional
+            Number of processors to use while downloading, creating images,
+            and creating movies. If nproc = 1 then the program will loop 
+            instead of pooling image creation. Due to problems with the 
+            matplotlib backends parallel processing occasionally scrambles
+            text in images. Default = 2.
+        goes: boolean, optional
+            Overplot the goes flux with a 1 minute cadence.
+            goes only works for a full sun single wavelength image.
+            Default = False
+        wind: boolean, optional
+            Overplot the 6 minute solar wind parameters from ACE. wind only
+            works if goes is True and full sun for a single wavelength.
+        archive: string, optional
+            archive is the location of the aia fits files. If download
+            is set then the files download to a default directory. Then
+            archive does not need to be set. Default = "/data/SDO/AIA/synoptic/"
+        dfmt : string, optional 
+            The string format of start and end. Can be set to any date time
+            stripping variable in python, link below: 
+            (https://docs.python.org/2/library/datetime.html#strftime-and-strptime-behavior).
+            Default = '%Y/%m/%d %H:%M:%S'
+        outf: boolean, optional
+            Output movie filename without .mp4. (e.g. cool_flare). The movie outputs
+            to the YYYY_MM_DD_HHMM_*/final/ directory. Default YYYMMDD_HHMM.
+        synoptic: boolean, optional
+            Check using synoptic parameters or not (synoptic are 1024x1024 images).
+            Default = False.
+        odir:  string, optional, deprecated
+            output directory, which we now force to YYYY_MM_DD_HHMM_*
+        frate: int or float,optional
+            frame rate of output movie. Default = 10 frames per sec.
+        time_stamp: boolean, optional 
+            Include time stamp in images. Default = True
+        
+        cx  : float or int, optional
+            Center of the field of view for creating images. If cx is set
+            then the image is assumed to be a cutout. Selecting in prompt
+            overrides cx. Default = 0.0.
+        cy  : float or int, optional
+            Center of the field of view for creating images. If cy is set
+            then the image is assumed to be a cutout. Selecting in prompt
+            overrides cy. Default = 0.0.
+        prompt : boolean, optional
+            Bring up a prompt to set w0,h0,cx,cy, and the color scale.
+            Default = False
+        cutout : boolean, optional
+            Select a cutout from the full sun file. Automatically set if
+            rotation or prompt is True. Default = False
+        rotation : boolean, optional
+            Use Sunpy rotation for rotation correction. Automatically True
+            if rot_time is set. Default = False.
+        rot_time : datetime object or string, optional
+            The time cx and cy are measured. Can be set in prompt or manually.
+            If manually set then the rot_time must be a datetime object or 
+            a string with format dfmt. Default = None.
+        download: boolean, optional
+            Download the aia date from jsoc. Need to supply email if True.
+            Default = False
+        local   : boolean, optional
+            The archive is a local directory. Only need if you previously 
+            downloaded files. Then use archive to set the directory.
+            Default = False
+        email   : string, optional
+            Email address register to JSOC, so you may download aia files.
+            Default = None
         """
 
 
@@ -197,8 +326,10 @@ class aia_mkmovie:
         #check inserted rot_time time
         if isinstance(rot_time,datetime):
             self.rot_time = rot_time
+            self.rotation = True
         elif isinstance(rot_time,str):
             self.rot_time = datetime.strptime(rot_time,dfmt)
+            self.rotation = True
         elif rot_time is None:
             self.rot_time = rot_time
         else:
