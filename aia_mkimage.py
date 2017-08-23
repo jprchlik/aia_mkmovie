@@ -44,7 +44,7 @@ class aia_mkimage:
         if isinstance(dayarray,list):
             self.dayarray = dayarray
             if len(dayarray) == 3: color3 = True #automatically assume rgb creation if 3 
-            if len(dayarray) == 4: panel = True #automatically assume panel creation if 4 
+            elif len(dayarray) == 4: panel = True #automatically assume panel creation if 4 
             elif len(dayarray) == 1: color3 = False #force color 3 to be false if length 1 array
             else:
                 sys.stdout.write('dayarray must be length 1 (single), 3 (rgb), or 4 (panel)')
@@ -283,7 +283,7 @@ class aia_mkimage:
 
       #3 color image
        if self.color3:
-           self.scale = [self.img[0].scale[0].value,self.img[0].scale[1].value] # get x, y image scale
+           self.scale = [self.img.scale[0].value,self.img.scale[1].value] # get x, y image scale
        #single color image
        else:
            self.scale = [self.img.scale[0].value,self.img.scale[1].value] # get x, y image scale
