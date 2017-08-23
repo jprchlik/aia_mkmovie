@@ -658,6 +658,12 @@ class aia_mkmovie:
         else:
             for i in image_list: format_img(i)
 
+        #flip w0 and h0 if h0 > w0
+        if self.h0 > self.w0:
+            th0 = self.h0
+            tw0 = self.w0
+            self.w0 = th0
+            self.h0 = tw0
 
         #create movie object
         mo =create_movie(odir = self.sdir+'/final/',pdir = self.sdir+'/working/', ext = 'png', w0 = int(self.w0), h0=int(self.h0),frate=self.frate,outmov=self.outf)
