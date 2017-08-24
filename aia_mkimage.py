@@ -27,14 +27,14 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid.inset_locator import inset_axes
 from astropy.io import ascii
 from astropy.table import vstack,Table,join
-
+from sunpy.instr.aia import aiaprep as ap
 
 class aia_mkimage:
 
     def __init__(self,dayarray,sday=False,eday=False,w0=1900.,h0=1200.,dpi=100.,sc=1.,
                  goes=False,goesdat=False,ace=False,aceadat=False,single=True,panel=False,
                  color3=False,time_stamp=True,odir='working/',cutout=False,
-                 img_scale=None,cx=0.,cy=0.,xlim=None,ylim=None,synoptic=False,rot_time=None):
+                 img_scale=None,cx=0.,cy=0.,xlim=None,ylim=None,synoptic=False,rot_time=None,aiaprep=True):
 
         """
         Day array if 3 color goes in as RGB
@@ -71,7 +71,12 @@ class aia_mkimage:
             sys.stdout.write('synoptic must be a boolean')
             sys.exit(1)
 
-        #check if goes flag is set
+        #check if aiaprep flag is set
+        if isinstance(aiaprep,bool):
+            self.aiaprep = aiaprep
+        else:
+            sys.stdout.write('aiaprep must be boolean (Default = True)')
+            sys.exit(1)
 
         #check if goes flag is set
         if isinstance(goes,bool): 
@@ -336,7 +341,7 @@ class aia_mkimage:
                     #set normalized scaling for every observation
                     ivmin = self.img_scale[self.wav[j]][1]
                     ivmax = self.img_scale[self.wav[j]][2]
-                    prelim = (np.arcsinh(i.data)-ivmin)/ivmax
+                    prelim = (np.arcsinh(i.data/i.exposure_time.value)-ivmin)/ivmax
             
                     #replace out of bounds points
                     prelim[prelim < 0.] = 0.
@@ -452,16 +457,17 @@ class aia_mkimage:
                     ax.text(minx+txtx,miny+txty,'AIA {0}/{1}/{2}'.format(*self.wav)+'- {0}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=5000,fontweight='bold')
                 #loop through axis objects if panel
                 elif self.panel:
+                    #see if image is flipped
                     if self.flip_image:
-                        for l,p in enumerate(self.wav): ax[l].imshow(np.arcsinh(img_dict[p].data.T),interpolation='none',cmap=icmap[p],origin=origin,vmin=ivmin[p],vmax=ivmax[p],extent=[minx,maxx,miny,maxy],aspect='auto')
+                        for l,p in enumerate(self.wav): ax[l].imshow(np.arcsinh(img_dict[p].data.T/img_dict[p].exposure_time.value),interpolation='none',cmap=icmap[p],origin=origin,vmin=ivmin[p],vmax=ivmax[p],extent=[minx,maxx,miny,maxy],aspect='auto')
                     else:
-                        for l,p in enumerate(self.wav): ax[l].imshow(np.arcsinh(img_dict[p].data),interpolation='none',cmap=icmap[p],origin=origin,vmin=ivmin[p],vmax=ivmax[p],extent=[minx,maxx,miny,maxy],aspect='auto')
+                        for l,p in enumerate(self.wav): ax[l].imshow(np.arcsinh(img_dict[p].data/img_dict[p].exposure_time.value),interpolation='none',cmap=icmap[p],origin=origin,vmin=ivmin[p],vmax=ivmax[p],extent=[minx,maxx,miny,maxy],aspect='auto')
                     #put text in lower left axis
                     ax[2].text(minx+txtx,miny+txty,'AIA {0}/{1}/{2}/{3}'.format(*self.wav)+'- {0}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=24,zorder=5000,fontweight='bold')
                 else:
-                
-                    if self.flip_image: ax.imshow(np.arcsinh(img.data.T),interpolation='none',cmap=icmap,origin=origin,vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy],aspect='auto')
-                    else: ax.imshow(np.arcsinh(img.data),interpolation='none',cmap=icmap,origin=origin,vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy],aspect='auto')
+                    #see if image is flipped
+                    if self.flip_image: ax.imshow(np.arcsinh(img.data.T/img_dict[p].exposure_time.value),interpolation='none',cmap=icmap,origin=origin,vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy],aspect='auto')
+                    else: ax.imshow(np.arcsinh(img.data/img_dict[p].exposure_time.value),interpolation='none',cmap=icmap,origin=origin,vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy],aspect='auto')
                     ax.text(minx+txtx,miny+txty,'AIA {0} - {1}Z'.format(self.wav,img.date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=5000,fontweight='bold')
                 #set limits for cutout
                 if self.cutout:
@@ -574,11 +580,11 @@ class aia_mkimage:
         check = True
     #Level0 quality flag equals 0 (0 means no issues)
         if isinstance(img,list):
-            #create an image object to get parameters from
-            self.img = img[0] 
   
             #loop over all images
-            for i in img:
+            for k,i in enumerate(img):
+                #prep images if aiaprep is set
+                if self.aiaprep: img[k] = ap(img[k]) 
                 #exit if check ever fails
                 if check:
                     lev0 = i.meta['quallev0'] == 0
@@ -594,7 +600,12 @@ class aia_mkimage:
                 #leave loop when check fails
                 else: 
                     continue
+            #set default image to be the first image
+            #create an image object to get parameters from
+            self.img = img[0] 
         else:
+            #prep images if aiaprep is set
+            if self.aiaprep: img = ap(img) 
             #create an image object to get parameters from
             self.img = img 
           
