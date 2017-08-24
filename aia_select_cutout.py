@@ -1,5 +1,5 @@
 import matplotlib
-matplotlib.use('TkAgg')
+matplotlib.use('TkAgg',warn=False,force=True)
 
 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
@@ -37,6 +37,7 @@ class gui_c(Tk.Frame):
         self.order = 0
         #get maximum value in list
         self.ordermax = len(flist)-1
+
 
         #create parent variable
         self.parent = parent
@@ -477,7 +478,7 @@ class gui_c(Tk.Frame):
             #set normalized scaling for every observation
             self.ivmin = self.img_scale[self.wav[j]][1]
             self.ivmax = self.img_scale[self.wav[j]][2]
-            prelim = (np.arcsinh(i.data)-self.ivmin)/self.ivmax
+            prelim = (np.arcsinh(i.data/i.exposure_time.value)-self.ivmin)/self.ivmax
 
             #replace out of bounds points
             prelim[prelim < 0.] = 0.
@@ -594,7 +595,7 @@ class gui_c(Tk.Frame):
            self.scale = [self.img[0].scale[0].value,self.img[0].scale[1].value] # get x, y image scale
        #single color image
        else:
-           self.data0 = np.arcsinh(self.img.data) #reference the data plot seperately
+           self.data0 = np.arcsinh(self.img.data/self.img.exposure_time.value) #reference the data plot seperately
            self.scale = [self.img.scale[0].value,self.img.scale[1].value] # get x, y image scale
        #set aia plotting preferences
        self.img_prop()
@@ -625,12 +626,12 @@ class gui_c(Tk.Frame):
             ayd = self.img.meta['cdelt2']
         #get the number of pixels
             tx,ty = self.img.data.shape
-    #get the max and min x and y values
-        minx,maxx = px0-tx,tx-px0
-        miny,maxy = py0-ty,ty-py0
+        #get the max and min x and y values
+        pminx,pmaxx = 0.-px0,tx-px0
+        pminy,pmaxy = 0.-py0,ty-py0
     #convert to arcsec
-        maxx,minx = maxx*axd,minx*axd
-        maxy,miny = maxy*ayd,miny*ayd
+        maxx,minx = ax0+pmaxx*axd,ax0+pminx*axd
+        maxy,miny = ay0+pmaxy*ayd,ay0+pminy*ayd
 
         return maxx,minx,maxy,miny
 #Basic click event
