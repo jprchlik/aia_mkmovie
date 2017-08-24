@@ -4,7 +4,7 @@ __email__   = "jakub.prchlik@cfa.harvard.edu"
 
 import matplotlib
 #fixes multiprocess issue
-matplotlib.use('Tkagg')
+matplotlib.use('agg')
 
 import sys
 
