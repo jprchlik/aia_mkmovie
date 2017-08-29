@@ -327,19 +327,14 @@ class aia_mkimage:
             #input fits file
             self.filep = self.dayarray
           
-
-
-        	
             #check image quality
             check, img = self.qual_check()
            
             #return image wavelength
             #if isinstance(img,list):
             if self.color3:
-                self.wav = []
                 img3d = np.zeros((img[0].data.shape[0],img[0].data.shape[1],3))
                 for j,i in enumerate(img):
-                    self.wav.append('{0:4.0f}'.format(i.wavelength.value).replace(' ','0'))
                     #set normalized scaling for every observation
                     ivmin = self.img_scale[self.wav[j]][1]
                     ivmax = self.img_scale[self.wav[j]][2]
@@ -365,10 +360,8 @@ class aia_mkimage:
                 ivmin = {}
                 ivmax = {}
                 icmap = {}
-                self.wav = []
                 #put parameters in a series of dictionaries
                 for j,i in enumerate(img):
-                    self.wav.append('{0:4.0f}'.format(i.wavelength.value).replace(' ','0'))
                     icmap[self.wav[j]] = self.img_scale[self.wav[j]][0]
                     ivmin[self.wav[j]] = self.img_scale[self.wav[j]][1]
                     ivmax[self.wav[j]] = self.img_scale[self.wav[j]][2]
@@ -378,7 +371,6 @@ class aia_mkimage:
                 #observed time 
                 self.obs_time = img[0].date
             else:
-                self.wav ='{0:4.0f}'.format( img.wavelength.value).replace(' ','0')
                 #use default color tables
                 icmap = self.img_scale[self.wav][0]
                 ivmin = self.img_scale[self.wav][1]
@@ -580,12 +572,25 @@ class aia_mkimage:
     #read JPEG2000 file into sunpymap
         img = sunpy.map.Map(*self.filep)
         check = True
+        #create list of wavelengths in image
         #if image already exists exit right away
+        
         if self.color3:
+            self.wav = []
+            for j,i in enumerate(img): self.wav.append('{0:4.0f}'.format(i.wavelength.value).replace(' ','0'))
             outfi = self.odir+'AIA_{0}_'.format(img[0].date.strftime('%Y%m%d_%H%M%S'))+'{0}_{1}_{2}.png'.format(*self.wav)
+            #set default image to be the first image
+            #create an image object to get parameters from
+            self.img = img[0] 
         elif self.panel:
+            self.wav = []
+            for j,i in enumerate(img): self.wav.append('{0:4.0f}'.format(i.wavelength.value).replace(' ','0'))
             outfi = self.odir+'AIA_{0}_'.format(img[0].date.strftime('%Y%m%d_%H%M%S'))+'{0}_{1}_{2}_{3}.png'.format(*self.wav)
+            #set default image to be the first image
+            #create an image object to get parameters from
+            self.img = img[0] 
         else:
+            self.wav ='{0:4.0f}'.format( img.wavelength.value).replace(' ','0')
             outfi = self.odir+'AIA_{0}_'.format(img.date.strftime('%Y%m%d_%H%M%S'))+'{0}.png'.format(self.wav)
 
         #see if output file already exists
@@ -616,9 +621,6 @@ class aia_mkimage:
                 #leave loop when check fails
                 else: 
                     continue
-            #set default image to be the first image
-            #create an image object to get parameters from
-            self.img = img[0] 
         else:
             #prep images if aiaprep is set
             if self.aiaprep: img = ap(img) 
