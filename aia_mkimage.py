@@ -327,6 +327,8 @@ class aia_mkimage:
             #input fits file
             self.filep = self.dayarray
           
+
+
         	
             #check image quality
             check, img = self.qual_check()
@@ -578,6 +580,20 @@ class aia_mkimage:
     #read JPEG2000 file into sunpymap
         img = sunpy.map.Map(*self.filep)
         check = True
+        #if image already exists exit right away
+        if self.color3:
+            outfi = self.odir+'AIA_{0}_'.format(img[0].date.strftime('%Y%m%d_%H%M%S'))+'{0}_{1}_{2}.png'.format(*self.wav)
+        elif self.panel:
+            outfi = self.odir+'AIA_{0}_'.format(img[0].date.strftime('%Y%m%d_%H%M%S'))+'{0}_{1}_{2}_{3}.png'.format(*self.wav)
+        else:
+            outfi = self.odir+'AIA_{0}_'.format(img.date.strftime('%Y%m%d_%H%M%S'))+'{0}.png'.format(self.wav)
+
+        #see if output file already exists
+        #if so exit right away (do not aiaprep)
+        test_file = os.path.isfile(outfi)
+        if test_file: return False,img
+        
+
     #Level0 quality flag equals 0 (0 means no issues)
         if isinstance(img,list):
   
