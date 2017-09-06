@@ -27,7 +27,7 @@ from sunpy.instr.aia import aiaprep as ap
 
 class aia_mkimage:
 
-    def __init__(self,dayarray,sday=False,eday=False,w0=1900.,h0=1200.,dpi=100.,sc=1.,
+    def __init__(self,dayarray,sday=False,eday=False,w0=1900,h0=1144,dpi=100.,sc=1.,
                  goes=False,goesdat=False,ace=False,aceadat=False,single=True,panel=False,
                  color3=False,time_stamp=True,odir='working/',cutout=False,
                  img_scale=None,
@@ -45,6 +45,60 @@ class aia_mkimage:
             at a single wavelength. If dayarray is a list with length 3 or 4 the code respectively 
             assumes a 3 color or 4 panel image. The order for creating a 3 color array is RGB,
             while the order for a 4 panel image is top left, top right, bottom left, bottom right.
+        sday  : single string or datetime object
+            The start time over which to plot the goes and ace data.
+            The argument may be a string or datetime object.
+            If start is a string then the string must be in
+            the same form as the dfmt parameter (dfmt parameter 
+            default = %Y/%m/%d %H:%M:%S)
+        eday  : single string or datetime object
+            The end time over which to plot the goes and ace data.
+            The argument may be a string or datetime object.
+            If end is a string then the string must be in
+        w0: int or float, optional
+            Width of the movie in pixels. If the height (h0) is larger than
+            w0 the program will switch the two parameters on output. 
+            However, it will also transpose the x and y axes, which allows 
+            for rotated images and movies. Default = 1900
+        h0: int or float, optional 
+            Height of the movie in pixels. If h0 is larger than the
+            width (w0) the program will switch the two parameters on
+            output. However, it will also transpose the x and y axes,
+            which allows for rotated images and movies. Default = 1144
+        dpi    : float or integer, optional
+            The dots per inch of the output image. Default = 100
+        sc     : float or integer, optional
+            The fraction to up sample or under sample the image. The large number means more up
+            sampling, while numbers less than 1 down sample the images. The default is no 
+            change (1).
+        goes   : boolean, optional
+            When to plot GOES X-ray fluxes on the plots. Only works with single image.
+            Default = False
+        goesdat: astropy Table, optional
+            An astropy Table containing GOES X-ray fluxes from the NOAA archive. Best when
+            used in conjunction with aia_mkmovie. Default = False
+        ace    : boolean, optional
+            When to plot ACE solar wind data on the plots. Only works with single image.
+            Default = False
+        aceadat: astropy Table, optional
+            An astropy Table containing ACE solar wind parameters from the NOAA archive. Best when
+            used in conjunction with aia_mkmovie. Default = False
+        single: boolean, optional
+            Make a single image. Default = True but resets depending on the input list.
+        panel: boolean, optional
+            Make a 4 panel plot. If panel set to True then color3 must be 
+            False and the wavelength list must be 4 wavelengths long.
+            The wav list has the following format [top right, top left,
+            bottom right, bottom left]. Default = False
+        color3 : boolean, optional
+            Create a 3 color image. If color3 set to True panel must be
+            False and the wavelength list must be 4 wavelengths long.
+            The wav list has the following format [R, G, B]. Default =
+            False.
+        time_stamp: boolean, optional 
+            Include time stamp in images. Default = True
+        odir    : str, optional
+            Output directory for png files. Default = 'working/'.
         cutout   : boolean, optional
             Use a subsection of the aia images for processing. Default = False
         img_scale: dictionary, optional
@@ -56,7 +110,8 @@ class aia_mkimage:
             transformation and exposure normalized values. The program uses arcsinh for all image
             scaling because the arcsinh function behaves like a log transformation at large 
             values but does not error at negative values. If the user gives no image scale
-            then a default image scale loads. 
+            then a default image scale loads. The default color table works well for single
+            and panel images but not for 3 color images.
         synoptic: boolean, optional
             Check using synoptic parameters or not (synoptic are 1024x1024 images).
             Default = False.
@@ -76,8 +131,6 @@ class aia_mkimage:
             Use aiaprep from sunpy when making the image. Default = True.
    
 
-        Day array if 3 color goes in as RGB
-        Day array if panel goes in as Top left, top right, bottom left, bottom right 
         """
         #check format of input day array
         if isinstance(dayarray,list):
