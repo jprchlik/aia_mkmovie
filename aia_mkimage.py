@@ -34,9 +34,41 @@ class aia_mkimage:
     def __init__(self,dayarray,sday=False,eday=False,w0=1900.,h0=1200.,dpi=100.,sc=1.,
                  goes=False,goesdat=False,ace=False,aceadat=False,single=True,panel=False,
                  color3=False,time_stamp=True,odir='working/',cutout=False,
-                 img_scale=None,cx=0.,cy=0.,xlim=None,ylim=None,synoptic=False,rot_time=None,aiaprep=True):
+                 img_scale=None,
+                 #xlim=None,ylim=None, 
+                 synoptic=False,cx=0.,cy=0.,rot_time=None,aiaprep=True):
 
         """
+        Create a single image for input file or file array
+
+        Parameters
+        ----------
+        dayarray : string or list
+            The files use to create a single image. The argument may be a string or list.
+            If dayarray is a string then the program assumes you are creating a single image
+            at a single wavelength. If dayarray is a list with length 3 or 4 the code respectively 
+            assumes a 3 color or 4 panel image. The order for creating a 3 color array is RGB,
+            while the order for a 4 panel image is top left, top right, bottom left, bottom right.
+        
+        synoptic: boolean, optional
+            Check using synoptic parameters or not (synoptic are 1024x1024 images).
+            Default = False.
+        cx  : float or int, optional
+            Center of the field of view for creating images. If cx is set
+            then the image is assumed to be a cutout. Selecting in prompt
+            overrides cx. Default = 0.0.
+        cy  : float or int, optional
+            Center of the field of view for creating images. If cy is set
+            then the image is assumed to be a cutout. Selecting in prompt
+            overrides cy. Default = 0.0.
+        rot_time : string or datetime object, optional
+            The time cx and cy are measured. Can be set in prompt or manually.
+            If manually set then the rot_time must be a datetime object or 
+            a string with format dfmt. Default = None.
+        aiaprep  : boolean, optional 
+            Use aiaprep from sunpy when making the image. Default = True.
+   
+
         Day array if 3 color goes in as RGB
         Day array if panel goes in as Top left, top right, bottom left, bottom right 
         """
