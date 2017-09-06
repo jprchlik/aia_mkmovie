@@ -1,4 +1,4 @@
-__version__ = "0.1.0 (2017/07/24)"
+__version__ = "0.1.1 (2017/09/06)"
 __authors__ = ['Jakub Prchlik <jakub.prchlik@cfa.harvard.edu>']
 __email__   = "jakub.prchlik@cfa.harvard.edu"
 
