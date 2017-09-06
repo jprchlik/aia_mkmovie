@@ -16,16 +16,12 @@ except ImportError:
 
 from matplotlib.transforms import Bbox
 import matplotlib.dates as mdates
-import subprocess
-import glob
 import os
-import stat
 import numpy as np
-from datetime import date,datetime
+from datetime import datetime
 from datetime import timedelta as dt
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid.inset_locator import inset_axes
-from astropy.io import ascii
 from astropy.table import vstack,Table,join
 from sunpy.instr.aia import aiaprep as ap
 
@@ -172,6 +168,8 @@ class aia_mkimage:
             self.goesdat = goesdat
         elif goesdat == False:
             self.goesdat = [] #do not plot goes data
+        elif isinstance(goesdat,list):
+            self.goesdat = []
         else:
             sys.stdout.write('goesdat must be a astropy table')
 
