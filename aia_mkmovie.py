@@ -78,8 +78,8 @@ class aia_mkmovie:
             for rotated images and movies. Default = 1900
         h0: int or float, optional 
             Height of the movie in pixels. If h0 is larger than the
-            width (w0) the program witll switch the two parameters on
-            output. However, it will also transpose the x and y axies,
+            width (w0) the program will switch the two parameters on
+            output. However, it will also transpose the x and y axes,
             which allows for rotated images and movies. Default = 1144
         dpi: int or float, optional
             Dots per inch in the output images. Default = 300.
