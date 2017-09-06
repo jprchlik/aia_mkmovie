@@ -45,7 +45,18 @@ class aia_mkimage:
             at a single wavelength. If dayarray is a list with length 3 or 4 the code respectively 
             assumes a 3 color or 4 panel image. The order for creating a 3 color array is RGB,
             while the order for a 4 panel image is top left, top right, bottom left, bottom right.
-        
+        cutout   : boolean, optional
+            Use a subsection of the aia images for processing. Default = False
+        img_scale: dictionary, optional
+            Pass a dictionary where the key is a 4 character wavelength string with left padded 0s
+            in Angstroms and the values are a list. The first element in the list is a color map. 
+            By default the first element contains the color map given by sunpy for a given wavelength
+            (e.g. for 131 the color map is cm.sdoaia131). The second and third element are respectively
+            the minimum and maximum color map values. The minimum and maximum assume a arcsinh
+            transformation and exposure normalized values. The program uses arcsinh for all image
+            scaling because the arcsinh function behaves like a log transformation at large 
+            values but does not error at negative values. If the user gives no image scale
+            then a default image scale loads. 
         synoptic: boolean, optional
             Check using synoptic parameters or not (synoptic are 1024x1024 images).
             Default = False.
