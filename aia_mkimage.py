@@ -35,7 +35,7 @@ class aia_mkimage:
                  synoptic=False,cx=0.,cy=0.,rot_time=None,aiaprep=True):
 
         """
-        Create a single image for input file or file array
+        Class to create a single image for input file or file array
 
         Parameters
         ----------
@@ -388,282 +388,289 @@ class aia_mkimage:
  
    #create window for plotting
     def sub_window(self):
-
-      #3 color image
-       if self.color3:
-           self.scale = [self.img.scale[0].value,self.img.scale[1].value] # get x, y image scale
-       #single color image
-       else:
-           self.scale = [self.img.scale[0].value,self.img.scale[1].value] # get x, y image scale
-
-       #if rotation set get modify cx and cy values
-       if self.rotation:
-           from sunpy.physics.differential_rotation import rot_hpc
-           import astropy.units as u
-           #rotate start points
-           cx, cy = rot_hpc(self.cx*u.arcsec,self.cy*u.arcsec,self.rot_time,self.obs_time)
-           #update with new rotation values
-           self.cx, self.cy = cx.value,cy.value
-
-       #set new plot limits
-       #flip x and y values if h0>w0
-       if self.flip_image:
-           self.xlim = [self.cy-(self.scale[0]*self.w0/2.),self.cy+(self.scale[0]*self.w0/2.)]
-           self.ylim = [self.cx-(self.scale[1]*self.h0/2.),self.cx+(self.scale[1]*self.h0/2.)]
-       else:
-           self.xlim = [self.cx-(self.scale[0]*self.w0/2.),self.cx+(self.scale[0]*self.w0/2.)]
-           self.ylim = [self.cy-(self.scale[1]*self.h0/2.),self.cy+(self.scale[1]*self.h0/2.)]
-
+        #3 color image
+        if self.color3:
+            self.scale = [self.img.scale[0].value,self.img.scale[1].value] # get x, y image scale
+        #single color image
+        else:
+            self.scale = [self.img.scale[0].value,self.img.scale[1].value] # get x, y image scale
+ 
+        #if rotation set get modify cx and cy values
+        if self.rotation:
+            from sunpy.physics.differential_rotation import rot_hpc
+            import astropy.units as u
+            #rotate start points
+            cx, cy = rot_hpc(self.cx*u.arcsec,self.cy*u.arcsec,self.rot_time,self.obs_time)
+            #update with new rotation values
+            self.cx, self.cy = cx.value,cy.value
+ 
+        #set new plot limits
+        #flip x and y values if h0>w0
+        if self.flip_image:
+            self.xlim = [self.cy-(self.scale[0]*self.w0/2.),self.cy+(self.scale[0]*self.w0/2.)]
+            self.ylim = [self.cx-(self.scale[1]*self.h0/2.),self.cx+(self.scale[1]*self.h0/2.)]
+        else:
+            self.xlim = [self.cx-(self.scale[0]*self.w0/2.),self.cx+(self.scale[0]*self.w0/2.)]
+            self.ylim = [self.cy-(self.scale[1]*self.h0/2.),self.cy+(self.scale[1]*self.h0/2.)]
+ 
 
     #for j,i in enumerate(dayarray):
     #reformat file to be in 1900x1200 array and contain timetext
     def format_img(self):
-    
-            #input fits file
-            self.filep = self.dayarray
-          
-            #check image quality
-            check, img = self.qual_check()
+        """
+        Formats image and writes image to png file.
+        """
            
-            #return image wavelength
-            #if isinstance(img,list):
-            if self.color3:
-                img3d = np.zeros((img[0].data.shape[0],img[0].data.shape[1],3))
-                for j,i in enumerate(img):
-                    #set normalized scaling for every observation
-                    ivmin = self.img_scale[self.wav[j]][1]
-                    ivmax = self.img_scale[self.wav[j]][2]
-                    prelim = (np.arcsinh(i.data/i.exposure_time.value)-ivmin)/ivmax
-            
-                    #replace out of bounds points
-                    prelim[prelim < 0.] = 0.
-                    prelim[prelim > 1.] = 1.
-   
-                    #if flipped image flip the x,y values in prelim
-                    if self.flip_image:
-                        img3d[:,:,j] = prelim.T
-                    else:
-                        img3d[:,:,j] = prelim
-                #output png file
-                outfi = self.odir+'AIA_{0}_'.format(img[0].date.strftime('%Y%m%d_%H%M%S'))+'{0}_{1}_{2}.png'.format(*self.wav)
-                #observed time 
-                self.obs_time = img[0].date
-                #set scale for plotting 
-                self.scale = [self.img.scale[0].value,self.img.scale[1].value] # get x, y image scale 
-            #set up panel plot parameters
-            elif self.panel:
-                ivmin = {}
-                ivmax = {}
-                icmap = {}
-                #put parameters in a series of dictionaries
-                for j,i in enumerate(img):
-                    icmap[self.wav[j]] = self.img_scale[self.wav[j]][0]
-                    ivmin[self.wav[j]] = self.img_scale[self.wav[j]][1]
-                    ivmax[self.wav[j]] = self.img_scale[self.wav[j]][2]
-                outfi = self.odir+'AIA_{0}_'.format(img[0].date.strftime('%Y%m%d_%H%M%S'))+'{0}_{1}_{2}_{3}.png'.format(*self.wav)
-                #set scale for plotting 
-                self.scale = [self.img.scale[0].value,self.img.scale[1].value] # get x, y image scale 
-                #observed time 
-                self.obs_time = img[0].date
-            else:
-                #use default color tables
-                icmap = self.img_scale[self.wav][0]
-                ivmin = self.img_scale[self.wav][1]
-                ivmax = self.img_scale[self.wav][2]
-                outfi = self.odir+'AIA_{0}_'.format(img.date.strftime('%Y%m%d_%H%M%S'))+'{0}.png'.format(self.wav)
-                #set scale for plotting 
-                self.scale = [self.img.scale[0].value,self.img.scale[1].value] # get x, y image scale 
-                #observed time 
-                self.obs_time = img.date
-
-
-            #set up subwindow limits if cutout set
-            if self.cutout: self.sub_window()
-
-            #see if output file already exists
-            test = os.path.isfile(outfi)
+    
+        #input fits file
+        self.filep = self.dayarray
+      
+        #check image quality
+        check, img = self.qual_check()
+       
+        #return image wavelength
+        #if isinstance(img,list):
+        if self.color3:
+            img3d = np.zeros((img[0].data.shape[0],img[0].data.shape[1],3))
+            for j,i in enumerate(img):
+                #set normalized scaling for every observation
+                ivmin = self.img_scale[self.wav[j]][1]
+                ivmax = self.img_scale[self.wav[j]][2]
+                prelim = (np.arcsinh(i.data/i.exposure_time.value)-ivmin)/ivmax
         
-        #test to see if png file already exists and passes quality tests
-            if ((test == False) & (check)):
-                print 'Modifying file '+outfi
-        		# J. Prchlik 2016/10/06
-        #Block add J. Prchlik (2016/10/06) to give physical coordinate values 
+                #replace out of bounds points
+                prelim[prelim < 0.] = 0.
+                prelim[prelim > 1.] = 1.
 
-                #set up extra in stuff in plot if panel set
+                #if flipped image flip the x,y values in prelim
+                if self.flip_image:
+                    img3d[:,:,j] = prelim.T
+                else:
+                    img3d[:,:,j] = prelim
+            #output png file
+            outfi = self.odir+'AIA_{0}_'.format(img[0].date.strftime('%Y%m%d_%H%M%S'))+'{0}_{1}_{2}.png'.format(*self.wav)
+            #observed time 
+            self.obs_time = img[0].date
+            #set scale for plotting 
+            self.scale = [self.img.scale[0].value,self.img.scale[1].value] # get x, y image scale 
+        #set up panel plot parameters
+        elif self.panel:
+            ivmin = {}
+            ivmax = {}
+            icmap = {}
+            #put parameters in a series of dictionaries
+            for j,i in enumerate(img):
+                icmap[self.wav[j]] = self.img_scale[self.wav[j]][0]
+                ivmin[self.wav[j]] = self.img_scale[self.wav[j]][1]
+                ivmax[self.wav[j]] = self.img_scale[self.wav[j]][2]
+            outfi = self.odir+'AIA_{0}_'.format(img[0].date.strftime('%Y%m%d_%H%M%S'))+'{0}_{1}_{2}_{3}.png'.format(*self.wav)
+            #set scale for plotting 
+            self.scale = [self.img.scale[0].value,self.img.scale[1].value] # get x, y image scale 
+            #observed time 
+            self.obs_time = img[0].date
+        else:
+            #use default color tables
+            icmap = self.img_scale[self.wav][0]
+            ivmin = self.img_scale[self.wav][1]
+            ivmax = self.img_scale[self.wav][2]
+            outfi = self.odir+'AIA_{0}_'.format(img.date.strftime('%Y%m%d_%H%M%S'))+'{0}.png'.format(self.wav)
+            #set scale for plotting 
+            self.scale = [self.img.scale[0].value,self.img.scale[1].value] # get x, y image scale 
+            #observed time 
+            self.obs_time = img.date
+
+
+        #set up subwindow limits if cutout set
+        if self.cutout: self.sub_window()
+
+        #see if output file already exists
+        test = os.path.isfile(outfi)
+    
+    #test to see if png file already exists and passes quality tests
+        if ((test == False) & (check)):
+            print 'Modifying file '+outfi
+    		# J. Prchlik 2016/10/06
+    #Block add J. Prchlik (2016/10/06) to give physical coordinate values 
+
+            #set up extra in stuff in plot if panel set
+            if self.panel:
+                fig,ax = plt.subplots(figsize=(self.sc*float(self.w0)/float(self.dpi),self.sc*float(self.h0)/float(self.dpi)),nrows=2,ncols=2)
+                #remove space between plots
+                fig.subplots_adjust(wspace=0.0001,hspace=0.0001)
+                #make axis object a 1D array
+                ax = ax.ravel()
+                img = sunpy.map.Map(*self.filep)
+                
+                #set up dictionary for plotting data
+                img_dict = {} 
+                for l,p in enumerate(self.wav): img_dict[p] = img[l]
+            #single image properties
+            else:
+                fig,ax = plt.subplots(figsize=(self.sc*float(self.w0)/float(self.dpi),self.sc*float(self.h0)/float(self.dpi)))
+                img = sunpy.map.Map(*self.filep)
+                ax.set_axis_off()
+          
+            #universal image properties 
+            fig.set_dpi(self.dpi)
+            fig.subplots_adjust(left=0,bottom=0,right=1,top=1)
+
+            #return extent of image
+            #use the first image in the list if it is a composite image to get the image boundaries
+            if isinstance(img,list):
+                maxx,minx,maxy,miny = self.img_extent(img[0])
+            #else use the only image
+            else:
+                maxx,minx,maxy,miny = self.img_extent(img)
+
+
+            
+
+            #set text location
+            if ((self.w0 > self.h0) & (not self.cutout)):
+                txtx = -(self.w0-self.h0)
+                txty = (maxy-miny)*0.01
+            elif ((self.w0 < self.h0) & (not self.cutout)):
+                txty = -(self.h0-self.w0)
+                txtx = (maxx-minx)*0.01
+            elif ((self.w0 == self.h0) & (not self.cutout)):
+                txtx = (maxx-minx)*0.01
+                txty = (maxy-miny)*0.01
+            elif ((self.cutout) | (self.panel)):
+                txtx = (max(self.xlim)-min(self.xlim))*0.01+(min(self.xlim)-minx)
+                txty = (max(self.ylim)-min(self.ylim))*0.01+(min(self.ylim)-miny)
+
+            #set the origin location
+            origin = 'lower'
+
+    #plot the image in matplotlib
+            #use color composite image if color3 set
+            if self.color3:
+                ax.imshow(img3d,interpolation='none',origin=origin,extent=[minx,maxx,miny,maxy],aspect='auto')
+                ax.text(minx+txtx,miny+txty,'AIA {0}/{1}/{2}'.format(*self.wav)+'- {0}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=5000,fontweight='bold')
+            #loop through axis objects if panel
+            elif self.panel:
+                #see if image is flipped
+                if self.flip_image:
+                    for l,p in enumerate(self.wav): ax[l].imshow(np.arcsinh(img_dict[p].data.T/img_dict[p].exposure_time.value),interpolation='none',cmap=icmap[p],origin=origin,vmin=ivmin[p],vmax=ivmax[p],extent=[minx,maxx,miny,maxy],aspect='auto')
+                else:
+                    for l,p in enumerate(self.wav): ax[l].imshow(np.arcsinh(img_dict[p].data/img_dict[p].exposure_time.value),interpolation='none',cmap=icmap[p],origin=origin,vmin=ivmin[p],vmax=ivmax[p],extent=[minx,maxx,miny,maxy],aspect='auto')
+                #put text in lower left axis
+                ax[2].text(minx+txtx,miny+txty,'AIA {0}/{1}/{2}/{3}'.format(*self.wav)+'- {0}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=24,zorder=5000,fontweight='bold')
+            else:
+                #see if image is flipped
+                if self.flip_image: ax.imshow(np.arcsinh(img.data.T/img_dict[p].exposure_time.value),interpolation='none',cmap=icmap,origin=origin,vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy],aspect='auto')
+                else: ax.imshow(np.arcsinh(img.data/img_dict[p].exposure_time.value),interpolation='none',cmap=icmap,origin=origin,vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy],aspect='auto')
+                ax.text(minx+txtx,miny+txty,'AIA {0} - {1}Z'.format(self.wav,img.date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=5000,fontweight='bold')
+            #set limits for cutout
+            if self.cutout:
+                #loop through all if panel
                 if self.panel:
-                    fig,ax = plt.subplots(figsize=(self.sc*float(self.w0)/float(self.dpi),self.sc*float(self.h0)/float(self.dpi)),nrows=2,ncols=2)
-                    #remove space between plots
-                    fig.subplots_adjust(wspace=0.0001,hspace=0.0001)
-                    #make axis object a 1D array
-                    ax = ax.ravel()
-                    img = sunpy.map.Map(*self.filep)
+                    for iax in ax:
+                        iax.set_xlim(self.xlim)
+                        iax.set_ylim(self.ylim)
+                        iax.set_axis_off()
                     
-                    #set up dictionary for plotting data
-                    img_dict = {} 
-                    for l,p in enumerate(self.wav): img_dict[p] = img[l]
-                #single image properties
+                #if not panel use a single axis 
                 else:
-                    fig,ax = plt.subplots(figsize=(self.sc*float(self.w0)/float(self.dpi),self.sc*float(self.h0)/float(self.dpi)))
-                    img = sunpy.map.Map(*self.filep)
-                    ax.set_axis_off()
-              
-                #universal image properties 
-                fig.set_dpi(self.dpi)
-                fig.subplots_adjust(left=0,bottom=0,right=1,top=1)
+                    ax.set_xlim(self.xlim)
+                    ax.set_ylim(self.ylim)
 
-                #return extent of image
-                #use the first image in the list if it is a composite image to get the image boundaries
-                if isinstance(img,list):
-                    maxx,minx,maxy,miny = self.img_extent(img[0])
-                #else use the only image
-                else:
-                    maxx,minx,maxy,miny = self.img_extent(img)
 
+            if ((self.goes) & (not self.panel)):
+            #use the first image for goes and ace plotting
+                if isinstance(img,list): img = img[0] 
+#format string for date on xaxis
+                myFmt = mdates.DateFormatter('%m/%d')
+
+#only use goes data upto observed time
+
+                use, = np.where((self.goesdat['time_dt'] < img.date+dt(minutes=150)) & (self.goesdat['Long'] > 0.0))
+                clos,= np.where((self.goesdat['time_dt'] < img.date) & (self.goesdat['Long'] > 0.0))
+                ingoes = inset_axes(ax,width="27%",height="20%",loc=7,borderpad=-27) #hack so it is outside normal boarders
+                ingoes.set_position(Bbox([[0.525,0.51],[1.5,1.48]]))
+                ingoes.set_facecolor('black')
+#set inset plotting information to be white
+                ingoes.tick_params(axis='both',colors='white')
+                ingoes.spines['top'].set_color('white')
+                ingoes.spines['bottom'].set_color('white')
+                ingoes.spines['right'].set_color('white')
+                ingoes.spines['left'].set_color('white')
+#make grid
+                ingoes.grid(color='gray',ls='dashdot')
+
+                ingoes.xaxis.set_major_formatter(myFmt)
+
+                ingoes.set_ylim([1.E-9,1.E-2])
+                ingoes.set_xlim([self.sday,self.eday])
+                ingoes.set_ylabel('X-ray Flux (1-8$\mathrm{\AA}$) [Watts m$^{-2}$]',color='white')
+                ingoes.set_xlabel('Universal Time',color='white')
+                ingoes.plot(self.goesdat['time_dt'][use],self.goesdat['Long'][use],color='white')
+                ingoes.scatter(self.goesdat['time_dt'][clos][-1],self.goesdat['Long'][clos][-1],color='red',s=10,zorder=1000)
+                ingoes.set_yscale('log')
+#plot ace information
+            if ((self.ace) & (self.goes)):
+                use, = np.where((self.aceadat['time_dt'] < img.date+dt(minutes=150)) & (self.aceadat['S_1'] == 0.0) & (self.aceadat['S_2'] == 0) & (self.aceadat['Speed'] > -1000.))
+                clos,= np.where((self.aceadat['time_dt'] < img.date) & (self.aceadat['S_1'] ==  0) & (self.aceadat['S_2'] == 0) & (self.aceadat['Speed'] > -1000))
+                
+                acetop = inset_axes(ingoes,width='100%',height='100%',loc=9,borderpad=-27)
+                acebot = inset_axes(ingoes,width='100%',height='100%',loc=8,borderpad=-27)
+
+#set inset plotting information to be white
+                acetop.tick_params(axis='both',colors='white')
+                acetop.spines['top'].set_color('white')
+                acetop.spines['bottom'].set_color('white')
+                acetop.spines['right'].set_color('white')
+                acetop.spines['left'].set_color('white')
+
+#set inset plotting information to be white
+                acebot.tick_params(axis='both',colors='white')
+                acebot.spines['top'].set_color('white')
+                acebot.spines['bottom'].set_color('white')
+                acebot.spines['right'].set_color('white')
+                acebot.spines['left'].set_color('white')
+#make grid
+                acebot.grid(color='gray',ls='dashdot')
+                acetop.grid(color='gray',ls='dashdot')
+
+
+                acetop.set_facecolor('black')
+                acebot.set_facecolor('black')
+
+
+                acetop.set_ylim([0.,50.])
+                acebot.set_ylim([200.,1000.])
+
+                acetop.set_xlim([self.sday,self.eday])
+                acebot.set_xlim([self.sday,self.eday])
+
+                acetop.set_xlabel('Universal Time',color='white')
+                acebot.set_xlabel('Universal Time',color='white')
+ 
+                acetop.set_ylabel('B$_\mathrm{T}$ [nT]',color='white')
+                acebot.set_ylabel('Wind Speed [km/s]',color='white')
+
+                acetop.plot(self.aceadat['time_dt'][use],self.aceadat['Bt'][use],color='white')
+                acebot.plot(self.aceadat['time_dt'][use],self.aceadat['Speed'][use],color='white')
+                
+                acetop.scatter(self.aceadat['time_dt'][clos][-1],self.aceadat['Bt'][clos][-1],color='red',s=10,zorder=1000)
+                acebot.scatter(self.aceadat['time_dt'][clos][-1],self.aceadat['Speed'][clos][-1],color='red',s=10,zorder=1000)
+                
+                acebot.xaxis.set_major_formatter(myFmt)
+                acetop.xaxis.set_major_formatter(myFmt)
 
                 
-
-                #set text location
-                if ((self.w0 > self.h0) & (not self.cutout)):
-                    txtx = -(self.w0-self.h0)
-                    txty = (maxy-miny)*0.01
-                elif ((self.w0 < self.h0) & (not self.cutout)):
-                    txty = -(self.h0-self.w0)
-                    txtx = (maxx-minx)*0.01
-                elif ((self.w0 == self.h0) & (not self.cutout)):
-                    txtx = (maxx-minx)*0.01
-                    txty = (maxy-miny)*0.01
-                elif ((self.cutout) | (self.panel)):
-                    txtx = (max(self.xlim)-min(self.xlim))*0.01+(min(self.xlim)-minx)
-                    txty = (max(self.ylim)-min(self.ylim))*0.01+(min(self.ylim)-miny)
-
-                #set the origin location
-                origin = 'lower'
-
-        #plot the image in matplotlib
-                #use color composite image if color3 set
-                if self.color3:
-                    ax.imshow(img3d,interpolation='none',origin=origin,extent=[minx,maxx,miny,maxy],aspect='auto')
-                    ax.text(minx+txtx,miny+txty,'AIA {0}/{1}/{2}'.format(*self.wav)+'- {0}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=5000,fontweight='bold')
-                #loop through axis objects if panel
-                elif self.panel:
-                    #see if image is flipped
-                    if self.flip_image:
-                        for l,p in enumerate(self.wav): ax[l].imshow(np.arcsinh(img_dict[p].data.T/img_dict[p].exposure_time.value),interpolation='none',cmap=icmap[p],origin=origin,vmin=ivmin[p],vmax=ivmax[p],extent=[minx,maxx,miny,maxy],aspect='auto')
-                    else:
-                        for l,p in enumerate(self.wav): ax[l].imshow(np.arcsinh(img_dict[p].data/img_dict[p].exposure_time.value),interpolation='none',cmap=icmap[p],origin=origin,vmin=ivmin[p],vmax=ivmax[p],extent=[minx,maxx,miny,maxy],aspect='auto')
-                    #put text in lower left axis
-                    ax[2].text(minx+txtx,miny+txty,'AIA {0}/{1}/{2}/{3}'.format(*self.wav)+'- {0}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=24,zorder=5000,fontweight='bold')
-                else:
-                    #see if image is flipped
-                    if self.flip_image: ax.imshow(np.arcsinh(img.data.T/img_dict[p].exposure_time.value),interpolation='none',cmap=icmap,origin=origin,vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy],aspect='auto')
-                    else: ax.imshow(np.arcsinh(img.data/img_dict[p].exposure_time.value),interpolation='none',cmap=icmap,origin=origin,vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy],aspect='auto')
-                    ax.text(minx+txtx,miny+txty,'AIA {0} - {1}Z'.format(self.wav,img.date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=5000,fontweight='bold')
-                #set limits for cutout
-                if self.cutout:
-                    #loop through all if panel
-                    if self.panel:
-                        for iax in ax:
-                            iax.set_xlim(self.xlim)
-                            iax.set_ylim(self.ylim)
-                            iax.set_axis_off()
-                        
-                    #if not panel use a single axis 
-                    else:
-                        ax.set_xlim(self.xlim)
-                        ax.set_ylim(self.ylim)
-
-
-                if ((self.goes) & (not self.panel)):
-                #use the first image for goes and ace plotting
-                    if isinstance(img,list): img = img[0] 
-    #format string for date on xaxis
-                    myFmt = mdates.DateFormatter('%m/%d')
-    
-    #only use goes data upto observed time
-    
-                    use, = np.where((self.goesdat['time_dt'] < img.date+dt(minutes=150)) & (self.goesdat['Long'] > 0.0))
-                    clos,= np.where((self.goesdat['time_dt'] < img.date) & (self.goesdat['Long'] > 0.0))
-                    ingoes = inset_axes(ax,width="27%",height="20%",loc=7,borderpad=-27) #hack so it is outside normal boarders
-                    ingoes.set_position(Bbox([[0.525,0.51],[1.5,1.48]]))
-                    ingoes.set_facecolor('black')
-    #set inset plotting information to be white
-                    ingoes.tick_params(axis='both',colors='white')
-                    ingoes.spines['top'].set_color('white')
-                    ingoes.spines['bottom'].set_color('white')
-                    ingoes.spines['right'].set_color('white')
-                    ingoes.spines['left'].set_color('white')
-    #make grid
-                    ingoes.grid(color='gray',ls='dashdot')
-    
-                    ingoes.xaxis.set_major_formatter(myFmt)
-    
-                    ingoes.set_ylim([1.E-9,1.E-2])
-                    ingoes.set_xlim([self.sday,self.eday])
-                    ingoes.set_ylabel('X-ray Flux (1-8$\mathrm{\AA}$) [Watts m$^{-2}$]',color='white')
-                    ingoes.set_xlabel('Universal Time',color='white')
-                    ingoes.plot(self.goesdat['time_dt'][use],self.goesdat['Long'][use],color='white')
-                    ingoes.scatter(self.goesdat['time_dt'][clos][-1],self.goesdat['Long'][clos][-1],color='red',s=10,zorder=1000)
-                    ingoes.set_yscale('log')
-    #plot ace information
-                if ((self.ace) & (self.goes)):
-                    use, = np.where((self.aceadat['time_dt'] < img.date+dt(minutes=150)) & (self.aceadat['S_1'] == 0.0) & (self.aceadat['S_2'] == 0) & (self.aceadat['Speed'] > -1000.))
-                    clos,= np.where((self.aceadat['time_dt'] < img.date) & (self.aceadat['S_1'] ==  0) & (self.aceadat['S_2'] == 0) & (self.aceadat['Speed'] > -1000))
-                    
-                    acetop = inset_axes(ingoes,width='100%',height='100%',loc=9,borderpad=-27)
-                    acebot = inset_axes(ingoes,width='100%',height='100%',loc=8,borderpad=-27)
-    
-    #set inset plotting information to be white
-                    acetop.tick_params(axis='both',colors='white')
-                    acetop.spines['top'].set_color('white')
-                    acetop.spines['bottom'].set_color('white')
-                    acetop.spines['right'].set_color('white')
-                    acetop.spines['left'].set_color('white')
-    
-    #set inset plotting information to be white
-                    acebot.tick_params(axis='both',colors='white')
-                    acebot.spines['top'].set_color('white')
-                    acebot.spines['bottom'].set_color('white')
-                    acebot.spines['right'].set_color('white')
-                    acebot.spines['left'].set_color('white')
-    #make grid
-                    acebot.grid(color='gray',ls='dashdot')
-                    acetop.grid(color='gray',ls='dashdot')
-    
-    
-                    acetop.set_facecolor('black')
-                    acebot.set_facecolor('black')
-    
-    
-                    acetop.set_ylim([0.,50.])
-                    acebot.set_ylim([200.,1000.])
-    
-                    acetop.set_xlim([self.sday,self.eday])
-                    acebot.set_xlim([self.sday,self.eday])
-    
-                    acetop.set_xlabel('Universal Time',color='white')
-                    acebot.set_xlabel('Universal Time',color='white')
-     
-                    acetop.set_ylabel('B$_\mathrm{T}$ [nT]',color='white')
-                    acebot.set_ylabel('Wind Speed [km/s]',color='white')
-    
-                    acetop.plot(self.aceadat['time_dt'][use],self.aceadat['Bt'][use],color='white')
-                    acebot.plot(self.aceadat['time_dt'][use],self.aceadat['Speed'][use],color='white')
-                    
-                    acetop.scatter(self.aceadat['time_dt'][clos][-1],self.aceadat['Bt'][clos][-1],color='red',s=10,zorder=1000)
-                    acebot.scatter(self.aceadat['time_dt'][clos][-1],self.aceadat['Speed'][clos][-1],color='red',s=10,zorder=1000)
-                    
-                    acebot.xaxis.set_major_formatter(myFmt)
-                    acetop.xaxis.set_major_formatter(myFmt)
-    
-                    
-                fig.savefig(outfi,edgecolor='black',facecolor='black',dpi=self.dpi)
-                plt.clf()
-                plt.close()
-            return
+            fig.savefig(outfi,edgecolor='black',facecolor='black',dpi=self.dpi)
+            plt.clf()
+            plt.close()
+        return
     
     
     #for j,i in enumerate(dayarray):
     def qual_check(self):
+        """
+        Makes a hard quality check of the images. All images must have no flags set or 
+        the program will not plot the data.
+        """
     #read JPEG2000 file into sunpymap
         img = sunpy.map.Map(*self.filep)
         check = True
@@ -696,7 +703,6 @@ class aia_mkimage:
 
     #Level0 quality flag equals 0 (0 means no issues)
         if isinstance(img,list):
-  
             #loop over all images
             for k,i in enumerate(img):
                 #prep images if aiaprep is set
@@ -738,6 +744,9 @@ class aia_mkimage:
     #J. Prchlik 2016/10/11
     #Added to give physical coordinates
     def img_extent(self,img):
+        """
+        Get the bounding box for plotting 
+        """
         # get the image coordinates in pixels
         px0 = img.meta['crpix1']
         py0 = img.meta['crpix2']
