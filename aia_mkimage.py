@@ -296,31 +296,32 @@ class aia_mkimage:
     
 
 
-        #check proposed x and y limits
-        if ((xlim is None) & (ylim is None) & (not self.rotation)):
-            self.cutout = False
-        #if you are rotating assume a cut out (no reason to rotate with full sun)
-        elif (self.rotation):
-            self.cutout = True 
-        #make sure 
-        #make sure 
-        elif ((xlim is not None) & (isinstance(xlim,(np.ndarray,list))) & (ylim is not None) & (isinstance(ylim,(np.ndarray,list)))):
-            for i in xlim:
-                if not isinstance(i,(float,int)):
-                    sys.stdout.write('Individual x values must be float or int')
-                    sys.exit(1)
-            #if passes set xlim
-            #self.xlim = xlim
+       #Removed logic to check x and y limits Prchlik J. (2017/09/06)
+       ## #check proposed x and y limits
+       ## if ((xlim is None) & (ylim is None) & (not self.rotation)):
+       ##     self.cutout = False
+       ## #if you are rotating assume a cut out (no reason to rotate with full sun)
+       ## elif (self.rotation):
+       ##     self.cutout = True 
+       ## #make sure 
+       ## #make sure 
+       ## elif ((xlim is not None) & (isinstance(xlim,(np.ndarray,list))) & (ylim is not None) & (isinstance(ylim,(np.ndarray,list)))):
+       ##     for i in xlim:
+       ##         if not isinstance(i,(float,int)):
+       ##             sys.stdout.write('Individual x values must be float or int')
+       ##             sys.exit(1)
+       ##     #if passes set xlim
+       ##     #self.xlim = xlim
 
-            for i in ylim:
-                if not isinstance(i,(float,int)):
-                    sys.stdout.write('Individual y values must be float or int')
-                    sys.exit(1)
-            #if passes set ylim
-            #self.ylim = ylim
-        else: 
-            sys.stdout.write('X and Y limits must be empty, lists, or numpy arrays')
-            sys.exit(1)
+       ##     for i in ylim:
+       ##         if not isinstance(i,(float,int)):
+       ##             sys.stdout.write('Individual y values must be float or int')
+       ##             sys.exit(1)
+       ##     #if passes set ylim
+       ##     #self.ylim = ylim
+       ## else: 
+       ##     sys.stdout.write('X and Y limits must be empty, lists, or numpy arrays')
+       ##     sys.exit(1)
 
  
    #create window for plotting
