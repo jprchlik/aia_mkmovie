@@ -30,9 +30,57 @@ else:
 class gui_c(Tk.Frame):
 
     #init gui class
-    def __init__(self,parent,flist,w0=1900.,h0=1200.,cy=0,cx=0,color3=False,img_scale=None):
-        Tk.Frame.__init__(self,parent,background='white') #create initial frame with white background
+    def __init__(self,parent,flist,w0=1900,h0=1144,cy=0,cx=0,color3=False,img_scale=None):
+        """
+        Shows AIA image in 3 color or single image for scaling and region selection. After you
+        choose a region, the class will pass the parameters onto aia_mkimage from aia_mkmovie.
 
+        Parameters
+        ----------
+        parent : Tk.Frame
+            A Tk.Frame instance.
+        flist  : list
+            A list of files. If the list has 3 dimensions then the GUI will create a 3 color 
+            image.
+        w0: int or float, optional
+            The pixel width of the output to pass to aia_mkmovie (Can be set in the GUI).
+            If the height (h0) is larger than
+            w0 the program will switch the two parameters on output. 
+            However, it will also transpose the x and y axes, which allows 
+            for rotated images and movies. Default = 1900
+        h0: int or float, optional 
+            The pixel height of the output to pass to aia_mkmovie (can be set in GUI).
+            If h0 is larger than the
+            width (w0) the program will switch the two parameters on
+            output. However, it will also transpose the x and y axes,
+            which allows for rotated images and movies. Default = 1144
+        cx  : float or int, optional
+            Center of the field of view for creating images. If cx is set
+            then the image is assumed to be a cutout. Selecting in prompt
+            overrides cx. Default = 0.0 (can be set in GUI).
+        cy  : float or int, optional
+            Center of the field of view for creating images. If cy is set
+            then the image is assumed to be a cutout. Selecting in prompt
+            overrides cy. Default = 0.0 (can be set in GUI).
+        color3 : boolean, optional
+            Create a 3 color image. If color3 set to True panel must be
+            False and the wavelength list must be 4 wavelengths long.
+            The wav list has the following format [R, G, B]. Default =
+            False.
+        img_scale: dictionary, optional
+            Pass a dictionary where the key is a 4 character wavelength string with left padded 0s
+            in Angstroms and the values are a list. The first element in the list is a color map. 
+            By default the first element contains the color map given by sunpy for a given wavelength
+            (e.g. for 131 the color map is cm.sdoaia131). The second and third element are respectively
+            the minimum and maximum color map values. The minimum and maximum assume a arcsinh
+            transformation and exposure normalized values. The program uses arcsinh for all image
+            scaling because the arcsinh function behaves like a log transformation at large 
+            values but does not error at negative values. If the user gives no image scale
+            then a default image scale loads. The default color table works well for single
+            and panel images but not for 3 color images. Will pass updated values updated 
+            in GUI to aia_mkimage through aia_mkmovie.
+        """
+        Tk.Frame.__init__(self,parent,background='white') #create initial frame with white background
 
         #set the starting list to be 0
         self.order = 0
