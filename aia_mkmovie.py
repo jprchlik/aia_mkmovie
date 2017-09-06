@@ -24,7 +24,6 @@ from mpl_toolkits.axes_grid.inset_locator import inset_axes
 from astropy.io import ascii
 from astropy.table import vstack,Table,join
 
-from SMEARpy import Scream
 
 #import aia_mkimage
 from aia_mkimage import aia_mkimage
@@ -35,7 +34,7 @@ class aia_mkmovie:
 
     #initialize aia_mkmovie
     def __init__(self,start,end,wav,cadence='6m',w0=1900,h0=1144,dpi=300,usehv = False,
-                 panel=False,color3=False,select=False,videowall=True,nproc=2,goes=False,wind=False,
+                 panel=False,color3=False,select=False,videowall=True,nproc=1,goes=False,wind=False,
                  archive="/data/SDO/AIA/synoptic/",dfmt = '%Y/%m/%d %H:%M:%S',
                  outf=True,synoptic=False,odir='working/',frate=10,time_stamp=True,cx=0.0,cy=0.0,
                  prompt=False,cutout=False,rotation=False,rot_time=None,download=False,
@@ -106,7 +105,7 @@ class aia_mkmovie:
             and creating movies. If nproc = 1 then the program will loop 
             instead of pooling image creation. Due to problems with the 
             matplotlib backends parallel processing occasionally scrambles
-            text in images. Default = 2.
+            text in images. Default = 1.
         goes: boolean, optional
             Overplot the goes flux with a 1 minute cadence.
             goes only works for a full sun single wavelength image.
@@ -479,6 +478,9 @@ class aia_mkmovie:
        
 #create directories without erroring if they already exist c
     def create_dir(self,dirs):
+        """
+        Create directories used by the program.
+        """
         try:
             os.mkdir(dirs)
         except OSError:
@@ -487,6 +489,10 @@ class aia_mkmovie:
     
 
     def gather_files(self):
+        """
+        Downloads and/or concatenate into all files used for creating images 
+        and producing the final movie
+        """
         # use helioviewer if requested 
         if self.usehv:
             from sunpy.net.helioviewer import HelioviewerClient
@@ -651,6 +657,9 @@ class aia_mkmovie:
 
 
     def gather_local(self):
+        """
+        Look in local archive directory and retrieve time cadence and output list format.
+        """
         from glob import glob
 
         #create a list of desired cadences
@@ -685,7 +694,15 @@ class aia_mkmovie:
 
 
     def scream(self):
+        """
+        Scan local SDO AIA archives for requested data.
+        """
 
+        try:
+            from SMEARpy import Scream
+        except:
+            sys.stdout.write('SMEARpy not found in archive. Should only run at locations with local SDO archive.')
+            sys.exit(1)
         #J. Prchlik 2016/10/06
         #Updated version calls local files
         verbose=False 
@@ -778,10 +795,7 @@ class aia_mkmovie:
                      #xlim=self.xlim,ylim=self.ylim,
                      synoptic=self.synoptic,rot_time=self.rot_time) for i in self.fits_files]
 
-        #J. Prchlik 2016/10/06
-        #Switched jp2 to fits
-        #loop is for testing purposes
-        #for i in forpool: format_img(i)
+        #Process in parallel if number of processors greater than 1
         if self.nproc > 1:
             pool1 = Pool(processes=self.nproc)
             outs = pool1.map(format_img,image_list)
@@ -804,12 +818,11 @@ class aia_mkmovie:
 
     def run_all(self):
         """
-        Runs program from beginning to end based on input parameters
+        Run program from beginning to end based on input parameters
         """
         
         #get fits files
         self.gather_files()
-
 
         #if prompt set bring up a prompt
         if self.prompt: self.init_prompt()
@@ -819,6 +832,7 @@ class aia_mkmovie:
  
 
 
+#Call created class for formating image
 def format_img(aia_img):
     aia_img.format_img()
     #remove the image map from object to prevent memory leak
