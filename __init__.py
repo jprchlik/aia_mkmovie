@@ -39,6 +39,5 @@ grab_goes_xray_flux
 make_movie
     Makes a movie with the given dimensions and cadence
 
-
 """
 from aia_mkmovie import aia_mkmovie,aia_mkimage
