@@ -174,8 +174,8 @@ class aia_mkmovie:
         self.img_scale = None
      
         #No default x or y limits
-        self.xlim = None
-        self.ylim = None
+        #self.xlim = None
+        #self.ylim = None
 
         #list of acceptable wavelengths
         self.awavs = ['94','131','171','193','211','304','335','1600','1700']
@@ -750,8 +750,8 @@ class aia_mkmovie:
         self.cy = gui.cy
         self.w0 = gui.w0
         self.h0 = gui.h0
-        self.xlim = [min(gui.xbox),max(gui.xbox)]
-        self.ylim = [min(gui.ybox),max(gui.ybox)]
+        #self.xlim = [min(gui.xbox),max(gui.xbox)]
+        #self.ylim = [min(gui.ybox),max(gui.ybox)]
 
         #use image scaling to pass to mkimage
         self.img_scale=gui.img_scale
@@ -775,7 +775,8 @@ class aia_mkmovie:
                      ace=self.wind,aceadat=self.aceadat,single=self.single,panel=self.panel,
                      color3=self.color3,time_stamp=self.time_stamp,odir=self.sdir+'/working/',
                      cx=self.cx,cy=self.cy,
-                     xlim=self.xlim,ylim=self.ylim,synoptic=self.synoptic,rot_time=self.rot_time) for i in self.fits_files]
+                     #xlim=self.xlim,ylim=self.ylim,
+                     synoptic=self.synoptic,rot_time=self.rot_time) for i in self.fits_files]
 
         #J. Prchlik 2016/10/06
         #Switched jp2 to fits
@@ -820,6 +821,8 @@ class aia_mkmovie:
 
 def format_img(aia_img):
     aia_img.format_img()
+    #remove the image map from object to prevent memory leak
+    aia_img.img = 0.0 
 
 
 
