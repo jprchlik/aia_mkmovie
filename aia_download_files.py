@@ -1,4 +1,4 @@
-__version__ = "0.0.1 (2017/08/01)"
+__version__ = "0.1.0 (2017/09/06)"
 __authors__ = ['Jakub Prchlik <jakub.prchlik@cfa.harvard.edu>']
 __email__   = "jakub.prchlik@cfa.harvard.edu"
 
@@ -13,10 +13,63 @@ import numpy as np
 
 
 class download_files:
-    def __init__(self,start,end,wav,cadence,series='aia.lev1_euv_12s',segment='image',email=None,odir=None,
+    def __init__(self,start,end,wav,cadence,series='aia.lev1_euv_12s',
+                 segment='image',email=None,odir=None,
                  overwrite=True,max_con=1,dfmt='%Y/%m%/d %H:%M:%S'):
         """
-        Will connect to aia_mkmovie
+        Both a stand alone and aia_mkmovie connected class for downloading AIA data from the JSOC archive.
+        N.B. JSOC may fail without proper warning if total download size is too larger even though
+        the number of files is within the required parameters. If that occurs break the download into
+        smaller wavelength groupings for download. Then you may combined the data into one folder
+        and use the local archive keywords in aia_mkmovie.py
+
+        Parameters
+        ----------
+        start : single string or datetime object
+            The start time over which to download.
+            The argument may be a string or datetime object.
+            If start is a string then the string must be in
+            the same form as the dfmt parameter (dfmt parameter 
+            default = %Y/%m/%d %H:%M:%S)
+        end   : single string or datetime object
+            The end time over which to download.
+            The argument may be a string or datetime object.
+            If end is a string then the string must be in
+            the same form as the dfmt parameter (dfmt parameter 
+            default = %Y/%m/%d %H:%M:%S)
+        wav   : float, string, or array-like
+            AIA wavelengths to download. Can be a single wavelength
+            or a list of wavelengths.
+        cadence: string, int or float
+            The sampling frequency for downloading images.
+            If cadence is an int or float the program assumes the 
+            input cadence is in seconds. However, if one passes a 
+            string then the cadence can be set in seconds (s),
+            minutes (m), hours (h), or days (d). For example you may 
+            set with cadence = '6h'. Default = '6m'
+        series: string, optional
+            Series to download data from. The value currently must be 
+            'aia.lev1_uv_24s' for 1600 and 1700 observations or
+            'aia_lev1_euv_12s' for 94,131,171,193,211,304, and 335
+            observations. Default = 'aia.lev1_euv_12s' 
+        segment: string, optional 
+            Type of data to download from time range (e.g. spike or image).
+            Default = image
+        email  : string, semi-optional
+            The email to send the downloaded data to. This field is required
+            for JSOC download, which currently is the only option. However,
+            future versions may include jhelioviewer and/or VSO downloads.  
+        odir   : string, optional
+            Output directory for downloaded files. Default = './'
+        overwrite: boolean, optional
+            Overwrite files of the same name in the local directory.
+            Default = True
+        max_con : int, optional
+            Maximum number of connections to JSOC archive. Default = 1.
+        dfmt : string, optional 
+            The string format of start and end. Can be set to any date time
+            stripping variable in python, link below: 
+            (https://docs.python.org/2/library/datetime.html#strftime-and-strptime-behavior).
         """
 
         #list of acceptable wavelengths
@@ -67,7 +120,7 @@ class download_files:
         if isinstance(odir,str):
             self.odir = odir
         elif odir is None:
-            self.odir = odir
+            self.odir = './'
         else:
             sys.stdout.write('odir must be a string')
             quit()
@@ -156,6 +209,9 @@ class download_files:
             self.wav = [i*u.AA]
 
     def get_drms_files(self):
+        """
+        Downloads the requested data from class object using drms (i.e. JSOC).
+        """
         import drms
         client = drms.Client(email=self.email,verbose=False)
         fmt = '%Y.%m.%d_%H:%M'
@@ -181,11 +237,14 @@ class download_files:
         index = np.arange(np.size(self.expt.urls.url))
 # get file from JSOC
         #set directory to current if no path set
-        if self.odir is None: self.odir = './'
         outf = self.expt.download(self.odir,index,fname_from_rec=True)
      
 
     def get_sunpy_files(self):
+        """
+        Downloads the requested data from class object using sunpy (i.e. JSOC).
+        SUNPY IMPLEMENTATION DOES NOT WORK!
+        """
         from sunpy.net import jsoc
         client = jsoc.JSOCClient()   
         dfmt = '%Y-%m-%dT%H:%M:%S' #date format for JSOC
