@@ -529,7 +529,7 @@ class aia_mkmovie:
 
         #get all days in date time span
         if self.goes: 
-            ggxf.look_xrays(self.start,self.end+dt(days=1),self.sdir)
+            ggxf.look_xrays(self.start,self.end+dt(days=1),self.sdir,email=self.email)
             goesfil = glob.glob(self.sdir+'/goes/*txt')
             goesnames = [ 'YR', 'MO', 'DA', 'HHMM', 'JDay', 'Secs', 'Short', 'Long'] 
             self.goesdat = Table(names=goesnames)
