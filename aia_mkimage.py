@@ -32,7 +32,7 @@ class aia_mkimage:
                  color3=False,time_stamp=True,odir='working/',cutout=False,
                  img_scale=None,
                  #xlim=None,ylim=None, 
-                 synoptic=False,cx=0.,cy=0.,rot_time=None,aiaprep=True):
+                 synoptic=False,cx=0.,cy=0.,rot_time=None,aiaprep=True,skip_short=False):
 
         """
         Class to create a single image for input file or file array
@@ -129,7 +129,8 @@ class aia_mkimage:
             a string with format dfmt. Default = None.
         aiaprep  : boolean, optional 
             Use aiaprep from sunpy when making the image. Default = True.
-   
+        skip_short: boolean, optional
+            Skip exposures with less than 1.85s. Default = True
 
         """
         #check format of input day array
@@ -334,6 +335,14 @@ class aia_mkimage:
         else:
             sys.stdout.write('color3 must be a boolean')
             sys.exit(1)
+
+        #skip short exposures
+        if isinstance(skip_short,bool):
+            self.skip_short = skip_short
+        else:
+            sys.stdout.write('skip_short must be a boolean')
+            sys.exit(1)
+         
          
         #list of acceptable wavelengths
         self.awavs = ['0094','0131','0171','0193','0211','0304','0335','1600','1700']
@@ -671,12 +680,13 @@ class aia_mkimage:
         Makes a hard quality check of the images. All images must have no flags set or 
         the program will not plot the data.
         """
-    #read JPEG2000 file into sunpymap
+    #read file into sunpymap
         img = sunpy.map.Map(*self.filep)
         check = True
+
+        
         #create list of wavelengths in image
         #if image already exists exit right away
-        
         if self.color3:
             self.wav = []
             for j,i in enumerate(img): self.wav.append('{0:4.0f}'.format(i.wavelength.value).replace(' ','0'))
@@ -715,10 +725,14 @@ class aia_mkimage:
                     if self.synoptic:
                         lev1 = np.binary_repr(img.meta['quality']) == '1000000000000000000000000000000'
                     else:
-                   #4096x4096
-                       lev1 = i.meta['quality'] == 0
-                   #check that both levels pass and it is not a calibration file
-                       check = ((lev0) & (lev1))# & (calb)) 
+                    #4096x4096
+                        lev1 = i.meta['quality'] == 0
+                    #check exposure time greater than 1.85 seconds
+                    if self.skip_short: expp =i.exposure_time.value >= 1.85
+                    else: expp = True
+                    
+                    #check that both levels pass and it is not a calibration file
+                    check = ((lev0) & (lev1) & (expp))# & (calb)) 
                 #leave loop when check fails
                 else: 
                     continue
