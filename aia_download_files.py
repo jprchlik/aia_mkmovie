@@ -51,7 +51,8 @@ class download_files:
             Series to download data from. The value currently must be 
             'aia.lev1_uv_24s' for 1600 and 1700 observations or
             'aia_lev1_euv_12s' for 94,131,171,193,211,304, and 335
-            observations. Default = 'aia.lev1_euv_12s' 
+            observations. aia.lev1 contains both, but contains more 
+            ancillary files. Default = 'aia.lev1' 
         segment: string, optional 
             Type of data to download from time range (e.g. spike or image).
             Default = image
@@ -77,7 +78,7 @@ class download_files:
         #list of acceptable segments
         self.asegs = ['image','spike','None']
         #list of acceptable series
-        self.asers = ['aia.lev1_uv_24s','aia.lev1_euv_12s']
+        self.asers = ['aia.lev1_uv_24s','aia.lev1_euv_12s','aia.lev1']
 
 
         #check if overwrite flag is set (Default = True)
@@ -184,7 +185,7 @@ class download_files:
         elif isinstance(wav,str):
             self.wav = [int(wav)*u.AA]
             #check to make sure wavelength is allowed
-            if int(self.wav.value) not in self.awavs:
+            if int(self.wav[0].value) not in self.awavs:
                 sys.stdout.write('{0:3.0f} not an acceptable wavelength'.format(self.wav.value))
                 quit()
 
@@ -206,7 +207,7 @@ class download_files:
         if isinstance(wav,list):
             self.wav = [ int(i)*u.AA for i in wav]
         elif isinstance(wav,(str,int)):
-            self.wav = [i*u.AA]
+            self.wav = [int(wav)*u.AA]
 
     def get_drms_files(self):
         """
