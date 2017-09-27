@@ -407,15 +407,23 @@ class aia_mkimage:
         #if rotation set get modify cx and cy values
         if self.rotation:
             #make rotation stable across different sunpy version
-            try:
-                from sunpy.physics.differential_rotation import rot_hpc
-            except ImportError:
-                from sunpy.physics.transforms.differential_rotation import rot_hpc
+            #try:
+            #    from sunpy.physics.differential_rotation import rot_hpc
+            #except ImportError:
+            #forcing sunpy > 8.0
+            from sunpy.physics.differential_rotation import solar_rotate_coordinate
+            #use astropy SkyCoord
+            from astropy.coordinates import SkyCoord
+            #get frame for coordiantes
+            from sunpy.coordinates import frames
             import astropy.units as u
+
+            #create Sky Coord class with intial values
+            c = SkyCoord(self.cx*u.arcsec,self.cy*u.arcsec,obstime=self.rot_time,frame=frames.Helioprojective)
             #rotate start points
-            cx, cy = rot_hpc(self.cx*u.arcsec,self.cy*u.arcsec,self.rot_time,self.obs_time)
+            nc = solar_rotate_coordinate(c,self.obs_time)
             #update with new rotation values
-            self.cx, self.cy = cx.value,cy.value
+            self.cx, self.cy = nc.x.value,nc.y.value
  
         #set new plot limits
         #flip x and y values if h0>w0
