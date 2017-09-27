@@ -423,7 +423,7 @@ class aia_mkimage:
             #rotate start points
             nc = solar_rotate_coordinate(c,self.obs_time)
             #update with new rotation values
-            self.cx, self.cy = nc.x.value,nc.y.value
+            self.cx, self.cy = nc.Tx.value,nc.Ty.value
  
         #set new plot limits
         #flip x and y values if h0>w0
