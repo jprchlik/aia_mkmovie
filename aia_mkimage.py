@@ -406,7 +406,11 @@ class aia_mkimage:
  
         #if rotation set get modify cx and cy values
         if self.rotation:
-            from sunpy.physics.differential_rotation import rot_hpc
+            #make rotation stable across different sunpy version
+            try:
+                from sunpy.physics.differential_rotation import rot_hpc
+            except ImportError:
+                from sunpy.physics.transforms.differential_rotation import rot_hpc
             import astropy.units as u
             #rotate start points
             cx, cy = rot_hpc(self.cx*u.arcsec,self.cy*u.arcsec,self.rot_time,self.obs_time)
