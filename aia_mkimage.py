@@ -350,6 +350,15 @@ class aia_mkimage:
 
         #Dictionary for vmax, vmin, and color
         if img_scale is None:
+            #self.img_scale = {'0094':[cm.sdoaia94  ,np.arcsinh(1.),np.arcsinh(150.)],
+            #                  '0131':[cm.sdoaia131 ,np.arcsinh(1.),np.arcsinh(500.)],
+            #                  '0171':[cm.sdoaia171 ,np.arcsinh(10.),np.arcsinh(2500.)],
+            #                  '0193':[cm.sdoaia193 ,np.arcsinh(100.),np.arcsinh(4500.)],
+            #                  '0211':[cm.sdoaia211 ,np.arcsinh(10.),np.arcsinh(4000.)],
+            #                  '0304':[cm.sdoaia304 ,np.arcsinh(2.),np.arcsinh(300.)],
+            #                  '0335':[cm.sdoaia335 ,np.arcsinh(1.),np.arcsinh(100.)],
+            #                  '1600':[cm.sdoaia1600,np.arcsinh(20.),np.arcsinh(500.)],
+            #                  '1700':[cm.sdoaia1700,np.arcsinh(200.),np.arcsinh(4000.)]}
             self.img_scale = {'0094':[cm.sdoaia94  ,np.arcsinh(1.),np.arcsinh(150.)],
                               '0131':[cm.sdoaia131 ,np.arcsinh(1.),np.arcsinh(500.)],
                               '0171':[cm.sdoaia171 ,np.arcsinh(10.),np.arcsinh(2500.)],
