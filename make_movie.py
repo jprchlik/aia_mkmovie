@@ -79,11 +79,32 @@ class create_movie:
         run = subprocess.call(['/bin/csh','-c','./run_ffmpeg.csh'])
         #rename the file to the file directory (cuts down on down time if running in a loop)
 
+    #run ffmpeg without writing file
+    def python_ffmpeg(self):
+
+        #create command string
+        command = '/usr/local/bin/ffmpeg -y -f image2 -r {2:2d} -i {5} -an -pix_fmt "yuv420p" -vcodec libx264 '
+        command = command+'-level 41 -crf 18.0 -b 8192k -r {2:2d} -bufsize 8192k -maxrate 8192k -g 25 -coder 1 '
+        command = command+'-profile main -preset faster -qdiff 4 -qcomp 0.7 -directpred 3 -flags +loop+mv4 '
+        command = command+'-cmp +chroma -partitions +parti4x4+partp8x8+partb8x8 -subq 7 -me_range 16 -keyint_min 1 '
+        command = command+'-sc_threshold 40 -i_qfactor 0.71 -rc_eq "blurCplx^(1-qComp)" -s "{0:4d}x{1:4d}" '
+        command = command+'-b_strategy 1 -bidir_refine 1 -refs 6 -deblockalpha 0 -deblockbeta 0 -trellis 1 '
+        command = command+'-x264opts keyint=25:min-keyint=1:bframes=1 -threads {4:1d} {3}'
+
+        #input command 
+        command = command.format(int(self.w0),int(self.h0),int(self.frate),self.outmov,int(self.nproc),'working/symlinks/seq%'+self.lengs+'d.'+self.ext))
+
+
+        #run command
+        run = subprocess.call(['/bin/tcsh','-c',command])
+    
+
     def create_movie(self):
         self.gather_files()
-        self.write_ffmpeg()
-        self.run_ffmpeg()
-        os.chdir(self.startd)
+        self.python_ffmpeg()
+        #self.write_ffmpeg()
+        #self.run_ffmpeg()
+        #os.chdir(self.startd)
         
          
         
