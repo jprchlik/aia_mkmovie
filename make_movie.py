@@ -92,7 +92,7 @@ class create_movie:
         command = command+'-x264opts keyint=25:min-keyint=1:bframes=1 -threads {4:1d} {3}'
 
         #input command 
-        command = command.format(int(self.w0),int(self.h0),int(self.frate),self.outmov,int(self.nproc),'working/symlinks/seq%'+self.lengs+'d.'+self.ext))
+        command = command.format(int(self.w0),int(self.h0),int(self.frate),self.outmov,int(self.nproc),self.pdir+'/symlinks/seq%'+self.lengs+'d.'+self.ext)
 
 
         #run command
