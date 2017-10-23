@@ -200,7 +200,7 @@ class aia_mkimage:
         #check format of acedat Table if it exits 
         if isinstance(aceadat,Table):
             self.aceadat = aceadat
-        elif aceadat == False:
+        elif ace == False:
             self.aceadat = [] #do not plot goes data
         elif isinstance(aceadat,list):
             self.aceadat = [] #do not plot goes data
@@ -231,7 +231,7 @@ class aia_mkimage:
         #check format of goesdat Table if it exits 
         if isinstance(goesdat,Table):
             self.goesdat = goesdat
-        elif goesdat == False:
+        elif goes == False:
             self.goesdat = [] #do not plot goes data
         elif isinstance(goesdat,list):
             self.goesdat = []
@@ -588,8 +588,8 @@ class aia_mkimage:
                 ax[2].text(minx+txtx,miny+txty,'AIA {0}/{1}/{2}/{3}'.format(*self.wav)+'- {0}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=24,zorder=5000,fontweight='bold')
             else:
                 #see if image is flipped
-                if self.flip_image: ax.imshow(np.arcsinh(img.data.T/img_dict[p].exposure_time.value),interpolation='none',cmap=icmap,origin=origin,vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy],aspect='auto')
-                else: ax.imshow(np.arcsinh(img.data/img_dict[p].exposure_time.value),interpolation='none',cmap=icmap,origin=origin,vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy],aspect='auto')
+                if self.flip_image: ax.imshow(np.arcsinh(img.data.T/img.exposure_time.value),interpolation='none',cmap=icmap,origin=origin,vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy],aspect='auto')
+                else: ax.imshow(np.arcsinh(img.data/img.exposure_time.value),interpolation='none',cmap=icmap,origin=origin,vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy],aspect='auto')
                 ax.text(minx+txtx,miny+txty,'AIA {0} - {1}Z'.format(self.wav,img.date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=5000,fontweight='bold')
             #set limits for cutout
             if self.cutout:
@@ -679,11 +679,15 @@ class aia_mkimage:
                 acetop.set_ylabel('B$_\mathrm{T}$ [nT]',color='white')
                 acebot.set_ylabel('Wind Speed [km/s]',color='white')
 
-                acetop.plot(self.aceadat['time_dt'][use],self.aceadat['Bt'][use],color='white')
-                acebot.plot(self.aceadat['time_dt'][use],self.aceadat['Speed'][use],color='white')
+                #only plot ace line if some good data exists
+                if use.size > 0:
+                    acetop.plot(self.aceadat['time_dt'][use],self.aceadat['Bt'][use],color='white')
+                    acebot.plot(self.aceadat['time_dt'][use],self.aceadat['Speed'][use],color='white')
                 
-                acetop.scatter(self.aceadat['time_dt'][clos][-1],self.aceadat['Bt'][clos][-1],color='red',s=10,zorder=1000)
-                acebot.scatter(self.aceadat['time_dt'][clos][-1],self.aceadat['Speed'][clos][-1],color='red',s=10,zorder=1000)
+                #only plot ACE point if it exists 
+                if clos.size > 0:
+                    acetop.scatter(self.aceadat['time_dt'][clos][-1],self.aceadat['Bt'][clos][-1],color='red',s=10,zorder=1000)
+                    acebot.scatter(self.aceadat['time_dt'][clos][-1],self.aceadat['Speed'][clos][-1],color='red',s=10,zorder=1000)
                 
                 acebot.xaxis.set_major_formatter(myFmt)
                 acetop.xaxis.set_major_formatter(myFmt)
