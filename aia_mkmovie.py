@@ -543,8 +543,8 @@ class aia_mkmovie:
             self.goesdat['time_dt'] = [datetime(int(i['YR']),int(i['MO']),int(i['DA']))+dt(seconds=i['Secs']) for i in self.goesdat]
         
         if self.wind:
-            aceb = glob.glob(sdir+'/ace/*mag*txt')
-            acep = glob.glob(sdir+'/ace/*swe*txt')
+            aceb = glob.glob(self.sdir+'/ace/*mag*txt')
+            acep = glob.glob(self.sdir+'/ace/*swe*txt')
         
             aceb_names = [ 'YR', 'MO', 'DA', 'HHMM', 'JDay', 'Secs', 'S', 'Bx','By','Bz','Bt','Lat','Long'] 
             acep_names = [ 'YR', 'MO', 'DA', 'HHMM', 'JDay', 'Secs', 'S', 'Den','Speed','Temp'] 
