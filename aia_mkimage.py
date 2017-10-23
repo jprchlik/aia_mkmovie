@@ -362,7 +362,7 @@ class aia_mkimage:
             self.img_scale = {'0094':[cm.sdoaia94  ,np.arcsinh(1.),np.arcsinh(150.)],
                               '0131':[cm.sdoaia131 ,np.arcsinh(1.),np.arcsinh(500.)],
                               '0171':[cm.sdoaia171 ,np.arcsinh(10.),np.arcsinh(2500.)],
-                              '0193':[cm.sdoaia193 ,np.arcsinh(100.),np.arcsinh(4500.)],
+                              '0193':[cm.sdoaia193 ,np.arcsinh(10.),np.arcsinh(4500.)],
                               '0211':[cm.sdoaia211 ,np.arcsinh(10.),np.arcsinh(4000.)],
                               '0304':[cm.sdoaia304 ,np.arcsinh(2.),np.arcsinh(300.)],
                               '0335':[cm.sdoaia335 ,np.arcsinh(1.),np.arcsinh(100.)],
@@ -505,6 +505,7 @@ class aia_mkimage:
             ivmax = self.img_scale[self.wav][2]
             outfi = self.odir+'AIA_{0}_'.format(img.date.strftime('%Y%m%d_%H%M%S'))+'{0}.png'.format(self.wav)
             #set scale for plotting 
+            self.img = img
             self.scale = [self.img.scale[0].value,self.img.scale[1].value] # get x, y image scale 
             #observed time 
             self.obs_time = img.date
@@ -588,8 +589,8 @@ class aia_mkimage:
                 ax[2].text(minx+txtx,miny+txty,'AIA {0}/{1}/{2}/{3}'.format(*self.wav)+'- {0}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=24,zorder=5000,fontweight='bold')
             else:
                 #see if image is flipped
-                if self.flip_image: ax.imshow(np.arcsinh(img.data.T/img.exposure_time.value),interpolation='none',cmap=icmap,origin=origin,vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy],aspect='auto')
-                else: ax.imshow(np.arcsinh(img.data/img.exposure_time.value),interpolation='none',cmap=icmap,origin=origin,vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy],aspect='auto')
+                if self.flip_image: ax.imshow(np.arcsinh(img.data.T/img.exposure_time.value),interpolation='none',cmap=icmap,origin=origin,vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy])
+                else: ax.imshow(np.arcsinh(img.data/img.exposure_time.value),interpolation='none',cmap=icmap,origin=origin,vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy])
                 ax.text(minx+txtx,miny+txty,'AIA {0} - {1}Z'.format(self.wav,img.date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=5000,fontweight='bold')
             #set limits for cutout
             if self.cutout:
@@ -612,11 +613,14 @@ class aia_mkimage:
 #format string for date on xaxis
                 myFmt = mdates.DateFormatter('%m/%d')
 
+                #get boarder pad value for all parameter plots
+                b_pad = -24.0
+
 #only use goes data upto observed time
 
                 use, = np.where((self.goesdat['time_dt'] < img.date+dt(minutes=150)) & (self.goesdat['Long'] > 0.0))
                 clos,= np.where((self.goesdat['time_dt'] < img.date) & (self.goesdat['Long'] > 0.0))
-                ingoes = inset_axes(ax,width="27%",height="20%",loc=7,borderpad=-27) #hack so it is outside normal boarders
+                ingoes = inset_axes(ax,width="27%",height="20%",loc=7,borderpad=b_pad) #hack so it is outside normal boarders
                 ingoes.set_position(Bbox([[0.525,0.51],[1.5,1.48]]))
                 ingoes.set_facecolor('black')
 #set inset plotting information to be white
@@ -642,8 +646,8 @@ class aia_mkimage:
                 use, = np.where((self.aceadat['time_dt'] < img.date+dt(minutes=150)) & (self.aceadat['S_1'] == 0.0) & (self.aceadat['S_2'] == 0) & (self.aceadat['Speed'] > -1000.))
                 clos,= np.where((self.aceadat['time_dt'] < img.date) & (self.aceadat['S_1'] ==  0) & (self.aceadat['S_2'] == 0) & (self.aceadat['Speed'] > -1000))
                 
-                acetop = inset_axes(ingoes,width='100%',height='100%',loc=9,borderpad=-27)
-                acebot = inset_axes(ingoes,width='100%',height='100%',loc=8,borderpad=-27)
+                acetop = inset_axes(ingoes,width='100%',height='100%',loc=9,borderpad=b_pad)
+                acebot = inset_axes(ingoes,width='100%',height='100%',loc=8,borderpad=b_pad)
 
 #set inset plotting information to be white
                 acetop.tick_params(axis='both',colors='white')
