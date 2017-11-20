@@ -38,7 +38,7 @@ class aia_mkmovie:
                  archive="/data/SDO/AIA/synoptic/",dfmt = '%Y/%m/%d %H:%M:%S',
                  outf=True,synoptic=False,odir='working/',frate=10,time_stamp=True,cx=0.0,cy=0.0,
                  prompt=False,cutout=False,rotation=False,rot_time=None,download=False,
-                 local=False,email=None):
+                 local=False,email=None,aia_prep=False):
         """ 
         Return an object with parameter to download data, create images, and create a movie
 
@@ -166,6 +166,10 @@ class aia_mkmovie:
         email   : string, optional
             Email address register to JSOC, so you may download aia files.
             Default = None
+        aia_prep: boolean, optional
+            Use aia_prep before creating an image. aia_prep option is most useful
+            (and to some level required) when creating a 3 color image/movie.
+            Using this option prevents parallel processing. (Default = False).
         """
 
 
@@ -298,6 +302,14 @@ class aia_mkmovie:
         else:
             sys.stdout.write('timestamp must be a boolean')
             sys.exit(1)
+
+        #check if aia_prep flag is set (Default = False)
+        if isinstance(aia_prep,bool): 
+            self.aia_prep = aia_prep
+        else:
+            sys.stdout.write('aia_prep must be a boolean')
+            sys.exit(1)
+
 
         #check if rotation flag is set (Default = False)
         if isinstance(rotation,bool): 
@@ -615,11 +627,13 @@ class aia_mkmovie:
             #else open the fits file and read information from the header
             except:
                 data = fits.open(i)
-                date = datetime.strptime(data[1].header['T_OBS'].split('.')[0], '%Y-%m-%dT%H:%M:%S')
-                wave = data[1].header['wavelnth']
-                if int(wave) == int(wav):
-                    new_fil.append(i)
-                    fil_dat.append(date)
+                #check that header contains the correctly formatted header
+                if len(data) == 2:
+                    date = datetime.strptime(data[1].header['T_OBS'].split('.')[0], '%Y-%m-%dT%H:%M:%S')
+                    wave = data[1].header['wavelnth']
+                    if int(wave) == int(wav):
+                        new_fil.append(i)
+                        fil_dat.append(date)
 
         #convert fil_dat to numpy time array 
         timelist = np.array(fil_dat)
@@ -791,7 +805,7 @@ class aia_mkmovie:
                      img_scale=self.img_scale,cutout=self.cutout,
                      ace=self.wind,aceadat=self.aceadat,single=self.single,panel=self.panel,
                      color3=self.color3,time_stamp=self.time_stamp,odir=self.sdir+'/working/',
-                     cx=self.cx,cy=self.cy,
+                     cx=self.cx,cy=self.cy,aia_prep=self.aia_prep,
                      #xlim=self.xlim,ylim=self.ylim,
                      synoptic=self.synoptic,rot_time=self.rot_time) for i in self.fits_files]
 
