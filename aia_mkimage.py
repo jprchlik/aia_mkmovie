@@ -32,7 +32,7 @@ class aia_mkimage:
                  color3=False,time_stamp=True,odir='working/',cutout=False,
                  img_scale=None,
                  #xlim=None,ylim=None, 
-                 synoptic=False,cx=0.,cy=0.,rot_time=None,aiaprep=True,skip_short=False):
+                 synoptic=False,cx=0.,cy=0.,rot_time=None,aia_prep=True,skip_short=False):
 
         """
         Class to create a single image for input file or file array
@@ -165,10 +165,10 @@ class aia_mkimage:
             sys.exit(1)
 
         #check if aiaprep flag is set
-        if isinstance(aiaprep,bool):
-            self.aiaprep = aiaprep
+        if isinstance(aia_prep,bool):
+            self.aia_prep = aia_prep
         else:
-            sys.stdout.write('aiaprep must be boolean (Default = True)')
+            sys.stdout.write('aia_prep must be boolean (Default = True)')
             sys.exit(1)
 
         #check if goes flag is set
@@ -744,8 +744,8 @@ class aia_mkimage:
         if isinstance(img,list):
             #loop over all images
             for k,i in enumerate(img):
-                #prep images if aiaprep is set
-                if self.aiaprep: img[k] = ap(img[k]) 
+                #prep images if aia_prep is set
+                if self.aia_prep: img[k] = ap(img[k]) 
                 #exit if check ever fails
                 if check:
                     lev0 = i.meta['quallev0'] == 0
@@ -766,8 +766,8 @@ class aia_mkimage:
                 else: 
                     continue
         else:
-            #prep images if aiaprep is set
-            if self.aiaprep: img = ap(img) 
+            #prep images if ai_aprep is set
+            if self.aia_cprep: img = ap(img) 
             #create an image object to get parameters from
             self.img = img 
           
