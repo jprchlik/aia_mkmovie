@@ -32,7 +32,7 @@ class aia_mkimage:
                  color3=False,time_stamp=True,odir='working/',cutout=False,
                  img_scale=None,
                  #xlim=None,ylim=None, 
-                 synoptic=False,cx=0.,cy=0.,rot_time=None,aia_prep=True,skip_short=False):
+                 synoptic=False,cx=0.,cy=0.,rot_time=None,aia_prep=False,skip_short=False):
 
         """
         Class to create a single image for input file or file array
@@ -92,7 +92,7 @@ class aia_mkimage:
             bottom right, bottom left]. Default = False
         color3 : boolean, optional
             Create a 3 color image. If color3 set to True panel must be
-            False and the wavelength list must be 4 wavelengths long.
+            False and the wavelength list must be 3 wavelengths long.
             The wav list has the following format [R, G, B]. Default =
             False.
         time_stamp: boolean, optional 
@@ -127,8 +127,8 @@ class aia_mkimage:
             The time cx and cy are measured. Can be set in prompt or manually.
             If manually set then the rot_time must be a datetime object or 
             a string with format dfmt. Default = None.
-        aiaprep  : boolean, optional 
-            Use aiaprep from sunpy when making the image. Default = True.
+        aia_prep  : boolean, optional 
+            Use aia_prep from sunpy when making the image. Default = False.
         skip_short: boolean, optional
             Skip exposures with less than 1.85s. Default = True
 
