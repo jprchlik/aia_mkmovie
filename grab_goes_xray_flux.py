@@ -1,7 +1,7 @@
 import ftplib
 import numpy as np
 import os
-import sys, getopt
+import sys
 from datetime import timedelta,datetime
 
 
