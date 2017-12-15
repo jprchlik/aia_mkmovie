@@ -17,7 +17,7 @@ try:
     import sunpy.map                                                                      
     from sunpy.cm import cm                                                               
 except ImportError:                                                                       
-    sys.stdout.write(sys.stderr+" sunpy not installed, use pip install sunpy --upgrade")   
+    sys.stdout.write("sunpy not installed, use pip install sunpy --upgrade")   
 
 #check the python version to use one Tkinter syntax or another
 if sys.version_info[0] < 3:

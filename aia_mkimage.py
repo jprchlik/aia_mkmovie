@@ -12,7 +12,7 @@ try:
     import sunpy.map
     from sunpy.cm import cm
 except ImportError:
-    sys.stdout.write(sys.stderr+" sunpy not installed, use pip install sunpy --upgrade")
+    sys.stdout.write("sunpy not installed, use pip install sunpy --upgrade")
 
 from matplotlib.transforms import Bbox
 import matplotlib.dates as mdates
