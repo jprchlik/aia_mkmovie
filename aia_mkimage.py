@@ -767,7 +767,7 @@ class aia_mkimage:
                     continue
         else:
             #prep images if ai_aprep is set
-            if self.aia_cprep: img = ap(img) 
+            if self.aia_prep: img = ap(img) 
             #create an image object to get parameters from
             self.img = img 
           
