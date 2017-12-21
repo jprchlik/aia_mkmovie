@@ -30,6 +30,23 @@ SETUP
                 Unzip the file locally. 
     3. Install the aia_mkmovie package
         Change directory to the clone directory or the unzipped directory 
-        (aia_mkmovie-master). Then type the following command.
+        (aia_mkmovie-master). Then type the following command if you want
+        it install in the default location, which you probably do:
+
         python setup.py install
+
+ABOUT THE CODE
+==============
+
+The code produces efficient SDO/AIA movies. A full wiki showing the features
+available is located at the following link:
+    https://github.com/jprchlik/aia_mkmovie/wiki 
+
+CONTACT
+=======
+
+Please post bug reports, patches, and other feedback to 
+
+    https://github.com/jprchlik/aia_mkmovie/issues
+
 
