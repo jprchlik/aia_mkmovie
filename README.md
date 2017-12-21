@@ -19,6 +19,8 @@ SETUP
         e. Tkinter Revision: 81008
         f. pyfits >= 3.4
         g. re >= 2.2.1
+        h. numpy >= 1.11.3
+        i. drms >= 0.5.2 (not required)
     2. Download the lastest aia_mkmovie movie package.
         a. If you are download the package for the first time you have two
            dowlonad options.
