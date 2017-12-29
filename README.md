@@ -42,7 +42,12 @@ ABOUT THE CODE
 
 The code produces efficient SDO/AIA movies. A full wiki showing the features
 available is located at the following link:
-    https://github.com/jprchlik/aia_mkmovie/wiki 
+    https://github.com/jprchlik/aia_mkmovie/wiki  
+
+
+Also, I included docstrings for every base module.
+Therefore, understanding what a specific module does is as simple as typing help(*ModuleName*).
+For example help(am.aia_mkmovie) in python.
 
 CONTACT
 =======
