@@ -8,6 +8,7 @@ import astropy.units as u
 import sys
 from datetime import datetime
 import numpy as np
+import os
 
 
 
@@ -15,7 +16,7 @@ import numpy as np
 class download_files:
     def __init__(self,start,end,wav,cadence,series='aia.lev1_euv_12s',
                  segment='image',email=None,odir=None,
-                 overwrite=True,max_con=1,dfmt='%Y/%m%/d %H:%M:%S'):
+                 overwrite=True,max_con=1,dfmt='%Y/%m/%d %H:%M:%S'):
         """
         Both a stand alone and aia_mkmovie connected class for downloading AIA data from the JSOC archive.
         N.B. JSOC may fail without proper warning if total download size is too larger even though
@@ -238,7 +239,7 @@ class download_files:
         index = np.arange(np.size(self.expt.urls.url))
 
         #get output file names to check if file already exists
-        outf = self.expt.urls.record.astype(str).str.replace('{','.').str.replace('}','.').str.replace('[','.').str.replace(']','.').str.replace('-','').str.replace('\.\.','.')+'fits'
+        outf = self.expt.urls.record.astype(str).str.replace(':','').str.replace('{','.').str.replace('}','.').str.replace('[','.').str.replace(']','.').str.replace('-','').str.replace('\.\.','.')+'fits'
         #Find if file exits is not then set check file to true so it keeps index
         check_file = [os.path.isfile(self.odir+i) == False for i in outf]
    
