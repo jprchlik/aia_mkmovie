@@ -52,7 +52,7 @@ class download_files:
             'aia.lev1_uv_24s' for 1600 and 1700 observations or
             'aia_lev1_euv_12s' for 94,131,171,193,211,304, and 335
             observations. aia.lev1 contains both, but contains more 
-            ancillary files. Default = 'aia.lev1' 
+            ancillary files. Default = 'aia.lev1_euv_12s' 
         segment: string, optional 
             Type of data to download from time range (e.g. spike or image).
             Default = image
