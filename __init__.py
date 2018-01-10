@@ -40,4 +40,4 @@ make_movie
     Makes a movie with the given dimensions and cadence
 
 """
-from aia_mkmovie import aia_mkmovie,aia_mkimage
+from aia_mkmovie import aia_mkmovie,aia_mkimage,aia_download_files
