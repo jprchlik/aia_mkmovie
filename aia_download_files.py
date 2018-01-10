@@ -178,7 +178,7 @@ class download_files:
         if isinstance(wav,(int,float)):
             self.wav  = [int(wav)*u.AA]
             #check to make sure wavelength is allowed
-            if int(self.wav.value) not in self.awavs:
+            if int(self.wav[0].value) not in self.awavs:
                 sys.stdout.write('{0:3.0f} not an acceptable wavelength'.format(self.wav.value))
                 quit()
 
