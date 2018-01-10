@@ -234,9 +234,18 @@ class download_files:
         #IF ERRORS WITH URL ERROR IT IS BECAUSE THE DOWNLOAD FILE SIZE IS TOO LARGE
         #export  the data file list 
         self.expt = client.export(self.qstr)
-#create an array of indexes to download
+        #create an array of indexes to download
         index = np.arange(np.size(self.expt.urls.url))
-# get file from JSOC
+
+        #get output file names to check if file already exists
+        outf = self.expt.urls.record.astype(str).str.replace('{','.').str.replace('}','.').str.replace('[','.').str.replace(']','.').str.replace('-','').str.replace('\.\.','.')+'fits'
+        #Find if file exits is not then set check file to true so it keeps index
+        check_file = [os.path.isfile(self.odir+i) == False for i in outf]
+   
+        #removed indices of already downloaded files
+        index = index[check_file]
+
+        # get new files from JSOC
         #set directory to current if no path set
         outf = self.expt.download(self.odir,index,fname_from_rec=True)
      
