@@ -23,6 +23,14 @@ class download_files:
         the number of files is within the required parameters. If that occurs break the download into
         smaller wavelength groupings for download. Then you may combined the data into one folder
         and use the local archive keywords in aia_mkmovie.py
+   
+        Usage
+        ----------
+        python> from aia_mkmovie import aia_download_files as adf
+        python> archive = 'raw/'
+        python> fobj = adf.download_files('2018/01/22 02:00:00','2018/01/22 02:30:00','131','30s',email=example@gmail.com,odir=archive)
+        python> fobj.get_drms_files()
+
 
         Parameters
         ----------
