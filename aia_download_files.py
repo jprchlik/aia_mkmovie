@@ -85,9 +85,9 @@ class download_files:
         #list of acceptable wavelengths
         self.awavs = [94,131,171,193,211,304,335,1600,1700]
         #list of acceptable segments
-        self.asegs = ['image','spike','None']
+        self.asegs = ['image','spike','None','magnetogram']
         #list of acceptable series
-        self.asers = ['aia.lev1_uv_24s','aia.lev1_euv_12s','aia.lev1']
+        self.asers = ['aia.lev1_uv_24s','aia.lev1_euv_12s','aia.lev1','aia_test.lev1p5','aia.lev1_nrt2','aia.lev0','aia.lev1','hmi.M_45s']
 
 
         #check if overwrite flag is set (Default = True)
@@ -230,9 +230,13 @@ class download_files:
 
         #create wavelength query string
         self.w_qstr = '[' 
-        for i in self.wav: self.w_qstr = self.w_qstr+'{0},'.format(int(i.value))
-        #remove last , and add bracket
-        self.w_qstr = self.w_qstr[:-1]+']'
+        for i in self.wav:
+            self.w_qstr = self.w_qstr+'{0},'.format(int(i.value))
+        #remove last , and add bracket if length of string is greater than 1
+        if len(self.w_qstr) > 1:
+            self.w_qstr = self.w_qstr[:-1]+']'
+        else:
+            self.w_qstr = self.w_qstr+']'
         
         #make the series string
         self.s_qstr = '{'+self.segment+'}'
@@ -246,8 +250,13 @@ class download_files:
         #create an array of indexes to download
         index = np.arange(np.size(self.expt.urls.url))
 
+
         #get output file names to check if file already exists
-        outf = self.expt.urls.record.astype(str).str.replace(':','').str.replace('{','.').str.replace('}','.').str.replace('[','.').str.replace(']','.').str.replace('-','').str.replace('\.\.','.')+'fits'
+        #check if it is hmi or aia if hmi change file format
+        if 'hmi' in self.qstr:
+             outf = self.expt.urls.record.astype(str).str.replace(':','_').str.replace('{','.').str.replace('}','.').str.replace('[','.').str.replace(']','.').str.replace('-','').str.replace('\.\.','.').str.replace('\.2\.','.').str.replace('M_45','m_45')+'fits'
+        else:
+             outf = self.expt.urls.record.astype(str).str.replace(':','').str.replace('{','.').str.replace('}','.').str.replace('[','.').str.replace(']','.').str.replace('-','').str.replace('\.\.','.')+'fits'
         #Find if file exits is not then set check file to true so it keeps index
         check_file = [os.path.isfile(self.odir+i) == False for i in outf]
    
