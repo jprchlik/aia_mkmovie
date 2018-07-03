@@ -621,9 +621,11 @@ class aia_mkmovie:
             try:
                 date = datetime.strptime(i.strip(self.archive).split('.')[2],datefmt)
                 wave = i.strip(self.archive).split('.')[3]
-                if int(wave) == int(wav):
+                if ((int(wave) == int(wav)) & (int(wave) < 5000.)):
                     new_fil.append(i)
                     fil_dat.append(date)
+                else:
+                    raise
             #else open the fits file and read information from the header
             except:
                 data = fits.open(i)
@@ -701,6 +703,7 @@ class aia_mkmovie:
                     sys.exit(1)
                 else:
                 #make sure the wavelength header agrees with found value
+                    fits_files = glob(self.archive+'*.fits')
                     fits_files = self.check_wavelength(fits_files,i)
                     self.fits_files_temp.append(fits_files)
             #transpose list array
