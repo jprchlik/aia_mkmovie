@@ -288,15 +288,18 @@ class aia_mkimage:
         if isinstance(cx,(int,float)):
             self.cx = cx
             #set variable for rotation in case need for np.rot90
-            if self.cx > 0:
-                self.k = 3
+            if self.flip_image:
+               if self.cx > 0:
+                   self.k = 3
+               else:
+                   self.k = 1
             else:
-                self.k = 1
+               self.k = 0
         else:
             sys.stdout.write('cx must be an integer or float (Assuming 0)')
             self.cx = 0.0
             #set variable for rotation in case need for np.rot90
-            self.k = 1
+            self.k = 0
         
         #check image y center
         if isinstance(cy,(int,float)):
@@ -444,8 +447,12 @@ class aia_mkimage:
         #set new plot limits
         #flip x and y values if h0>w0
         if self.flip_image:
+            #if self.k == 3:
             self.xlim = [self.cy-(self.scale[0]*self.w0/2.),self.cy+(self.scale[0]*self.w0/2.)]
             self.ylim = [self.cx-(self.scale[1]*self.h0/2.),self.cx+(self.scale[1]*self.h0/2.)]
+            #if self.k == 1:
+            #    self.xlim = [self.cy+(self.scale[0]*self.w0/2.),self.cy-(self.scale[0]*self.w0/2.)]
+            #    self.ylim = [self.cx+(self.scale[1]*self.h0/2.),self.cx-(self.scale[1]*self.h0/2.)]
         else:
             self.xlim = [self.cx-(self.scale[0]*self.w0/2.),self.cx+(self.scale[0]*self.w0/2.)]
             self.ylim = [self.cy-(self.scale[1]*self.h0/2.),self.cy+(self.scale[1]*self.h0/2.)]
@@ -623,6 +630,10 @@ class aia_mkimage:
                     ax.set_xlim(self.xlim)
                     ax.set_ylim(self.ylim)
 
+            #Add CX and CY position
+            px = self.cx*np.cos(np.pi*self.k)-self.cy*np.sin(np.pi*self.k)
+            py = self.cy*np.sin(np.pi*self.k)+self.cy*np.cos(np.pi*self.k)
+            ax.text(px,py,'X',color='red',fontsize=36,zorder=5000,fontweight='bold')
 
             if ((self.goes) & (not self.panel)):
             #use the first image for goes and ace plotting
@@ -807,31 +818,64 @@ class aia_mkimage:
         """
         Get the bounding box for plotting 
         """
+        #Also flip the x and y values if h0 > w0
+        #if self.flip_image:
+        #    if self.k == 3:
+        #        maxy,miny = ax0+pmaxx*axd,ax0+pminx*axd
+        #        maxx,minx = ay0+pmaxy*ayd,ay0+pminy*ayd
+        #    if self.k == 1:
+        #        maxy,miny = ax0-pmaxx*axd,ax0-pminx*axd
+        #        maxx,minx = ay0-pmaxy*ayd,ay0-pminy*ayd
+        #else:
+        #maxx,minx = ax0+pmaxx*axd,ax0+pminx*axd
+        #maxy,miny = ay0+pmaxy*ayd,ay0+pminy*ayd
+ 
+        #Switch to rotation maxtrices 2018/07/03 J. Prchlik
+        if self.k == 1:
+            rot_mat = np.matrix([[0.,-1.],[1.,0.]])
+        elif self.k == 3:
+            rot_mat = np.matrix([[0.,1.],[-1.,0.]])
+        elif self.k == 2:
+            rot_mat = np.matrix([[-1.,0.],[0.,-1.]])
+        else:
+            rot_mat = np.matrix([[1.,0.],[0.,1.]])
+
         # get the image coordinates in pixels
+        print('NEW')
         px0 = img.meta['crpix1']
         py0 = img.meta['crpix2']
+        print(px0,py0)
+        px0,py0 = np.abs(np.matrix([[px0,py0]])*rot_mat).tolist()[0]
+        print(px0,py0)
         # get the image coordinates in arcsec 
         ax0 = img.meta['crval1']
         ay0 = img.meta['crval2']
+        print(ax0,ay0)
+        ax0,ay0 = (np.matrix([[ax0,ay0]])*rot_mat).tolist()[0]
+        print(ax0,ay0)
         # get the image scale in arcsec 
         axd = img.meta['cdelt1']
         ayd = img.meta['cdelt2']
+        print(axd,ayd)
+        axd,ayd = (np.matrix([[axd,ayd]])*rot_mat).tolist()[0]
+        print(axd,ayd)
         #get the number of pixels
         tx,ty = img.data.shape
+        print(tx,ty)
+        tx,ty = np.abs(np.matrix([[tx,ty]])*rot_mat).tolist()[0]
+        print(tx,ty)
 
         #get the max and min x and y values
         pminx,pmaxx = 0.-px0,tx-px0
         pminy,pmaxy = 0.-py0,ty-py0
 
         #convert to arcsec
-        #Also flip the x and y values if h0 > w0
-        if self.flip_image:
-            maxy,miny = ax0+pmaxx*axd,ax0+pminx*axd
-            maxx,minx = ay0+pmaxy*ayd,ay0+pminy*ayd
-        else:
-            maxx,minx = ax0+pmaxx*axd,ax0+pminx*axd
-            maxy,miny = ay0+pmaxy*ayd,ay0+pminy*ayd
-    
+        maxx,minx = ax0+pmaxx*axd,ax0+pminx*axd
+        maxy,miny = ay0+pmaxy*ayd,ay0+pminy*ayd
+        print(maxx,minx)
+        print(maxy,miny)
+
+
         return maxx,minx,maxy,miny
         
 
