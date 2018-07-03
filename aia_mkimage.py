@@ -287,9 +287,16 @@ class aia_mkimage:
         #check image x center
         if isinstance(cx,(int,float)):
             self.cx = cx
+            #set variable for rotation in case need for np.rot90
+            if self.cx > 0:
+                self.k = 3
+            else:
+                self.k = 1
         else:
             sys.stdout.write('cx must be an integer or float (Assuming 0)')
             self.cx = 0.0
+            #set variable for rotation in case need for np.rot90
+            self.k = 1
         
         #check image y center
         if isinstance(cy,(int,float)):
@@ -474,7 +481,7 @@ class aia_mkimage:
 
                 #if flipped image flip the x,y values in prelim
                 if self.flip_image:
-                    img3d[:,:,j] = prelim.T
+                    img3d[:,:,j] = np.rot90(prelim,k=self.k)
                 else:
                     img3d[:,:,j] = prelim
             #output png file
@@ -582,15 +589,25 @@ class aia_mkimage:
             elif self.panel:
                 #see if image is flipped
                 if self.flip_image:
-                    for l,p in enumerate(self.wav): ax[l].imshow(np.arcsinh(img_dict[p].data.T/img_dict[p].exposure_time.value),interpolation='none',cmap=icmap[p],origin=origin,vmin=ivmin[p],vmax=ivmax[p],extent=[minx,maxx,miny,maxy],aspect='auto')
+                    for l,p in enumerate(self.wav):
+                         ax[l].imshow(np.arcsinh(np.rot90(img_dict[p].data/img_dict[p].exposure_time.value,k=self.k)),
+                                      interpolation='none',cmap=icmap[p],origin=origin,vmin=ivmin[p],vmax=ivmax[p],extent=[minx,maxx,miny,maxy],aspect='auto')
                 else:
-                    for l,p in enumerate(self.wav): ax[l].imshow(np.arcsinh(img_dict[p].data/img_dict[p].exposure_time.value),interpolation='none',cmap=icmap[p],origin=origin,vmin=ivmin[p],vmax=ivmax[p],extent=[minx,maxx,miny,maxy],aspect='auto')
+                    for l,p in enumerate(self.wav):
+                         ax[l].imshow(np.arcsinh(img_dict[p].data/img_dict[p].exposure_time.value),
+                                       interpolation='none',cmap=icmap[p],origin=origin,vmin=ivmin[p],vmax=ivmax[p],extent=[minx,maxx,miny,maxy],aspect='auto')
                 #put text in lower left axis
                 ax[2].text(minx+txtx,miny+txty,'AIA {0}/{1}/{2}/{3}'.format(*self.wav)+'- {0}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=24,zorder=5000,fontweight='bold')
             else:
                 #see if image is flipped
-                if self.flip_image: ax.imshow(np.arcsinh(img.data.T/img.exposure_time.value),interpolation='none',cmap=icmap,origin=origin,vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy])
-                else: ax.imshow(np.arcsinh(img.data/img.exposure_time.value),interpolation='none',cmap=icmap,origin=origin,vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy])
+                if self.flip_image: 
+                    ax.imshow(np.arcsinh(np.rot90(img.data/img.exposure_time.value,k=self.k)),
+                              interpolation='none',cmap=icmap,origin=origin,vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy])
+                else: 
+                    ax.imshow(np.arcsinh(img.data/img.exposure_time.value),
+                              interpolation='none',cmap=icmap,origin=origin,vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy])
+
+                #Add datetime stamp
                 ax.text(minx+txtx,miny+txty,'AIA {0} - {1}Z'.format(self.wav,img.date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=5000,fontweight='bold')
             #set limits for cutout
             if self.cutout:
