@@ -447,9 +447,15 @@ class aia_mkimage:
         #set new plot limits
         #flip x and y values if h0>w0
         if self.flip_image:
-            #if self.k == 3:
             self.xlim = [self.cy-(self.scale[0]*self.w0/2.),self.cy+(self.scale[0]*self.w0/2.)]
             self.ylim = [self.cx-(self.scale[1]*self.h0/2.),self.cx+(self.scale[1]*self.h0/2.)]
+
+            if self.k == 3:
+                self.xlim = self.xlim[::-1]
+            if self.k == 1:
+                self.ylim = self.ylim[::-1]
+                #self.xlim = self.xlim[::-1]
+             
             #if self.k == 1:
             #    self.xlim = [self.cy+(self.scale[0]*self.w0/2.),self.cy-(self.scale[0]*self.w0/2.)]
             #    self.ylim = [self.cx+(self.scale[1]*self.h0/2.),self.cx-(self.scale[1]*self.h0/2.)]
@@ -457,11 +463,6 @@ class aia_mkimage:
             self.xlim = [self.cx-(self.scale[0]*self.w0/2.),self.cx+(self.scale[0]*self.w0/2.)]
             self.ylim = [self.cy-(self.scale[1]*self.h0/2.),self.cy+(self.scale[1]*self.h0/2.)]
  
-        print('LIMITS')
-        print('X')
-        print(self.xlim)
-        print('Y')
-        print(self.ylim)
 
     #for j,i in enumerate(dayarray):
     #reformat file to be in 1900x1200 array and contain timetext
@@ -586,17 +587,19 @@ class aia_mkimage:
                 txtx = (maxx-minx)*0.01
                 txty = (maxy-miny)*0.01
             elif ((self.cutout) | (self.panel)):
-                txtx = (max(self.xlim)-min(self.xlim))*0.01+(min(self.xlim)-minx)
-                txty = (max(self.ylim)-min(self.ylim))*0.01+(min(self.ylim)-miny)
+                txtx = (self.xlim[1]-self.xlim[0])*0.01+(min(self.xlim)-minx)
+                txty = (self.ylim[1]-self.ylim[0])*0.01+(min(self.ylim)-miny)
 
             #set the origin location
             origin = 'lower'
+            #if self.flip_image:
+            #    origin = 'upper'
 
     #plot the image in matplotlib
             #use color composite image if color3 set
             if self.color3:
                 ax.imshow(img3d,interpolation='none',origin=origin,extent=[minx,maxx,miny,maxy],aspect='auto')
-                ax.text(minx+txtx,miny+txty,'AIA {0}/{1}/{2}'.format(*self.wav)+'- {0}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=5000,fontweight='bold')
+                ax.text(self.xlim[0]+txtx,self.ylim[0]+txty,'AIA {0}/{1}/{2}'.format(*self.wav)+'- {0}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=5000,fontweight='bold')
             #loop through axis objects if panel
             elif self.panel:
                 #see if image is flipped
@@ -620,7 +623,7 @@ class aia_mkimage:
                               interpolation='none',cmap=icmap,origin=origin,vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy])
 
                 #Add datetime stamp
-                ax.text(minx+txtx,miny+txty,'AIA {0} - {1}Z'.format(self.wav,img.date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=5000,fontweight='bold')
+                ax.text(self.xlim[0]+txtx,self.ylim[0]+txty,'AIA {0} - {1}Z'.format(self.wav,img.date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=5000,fontweight='bold')
             #set limits for cutout
             if self.cutout:
                 #loop through all if panel
@@ -635,10 +638,11 @@ class aia_mkimage:
                     ax.set_xlim(self.xlim)
                     ax.set_ylim(self.ylim)
 
-            #Add CX and CY position
-            px = self.cx*np.cos(np.pi*self.k)-self.cy*np.sin(np.pi*self.k)
-            py = self.cy*np.sin(np.pi*self.k)+self.cy*np.cos(np.pi*self.k)
-            ax.text(self.cx,self.cy,'X',color='red',fontsize=36,zorder=5000,fontweight='bold')
+            #Add CX and CY position (neg. sign because rot 90 is backwards
+            px = self.cx*np.cos(-np.pi*self.k/2.)-self.cy*np.sin(-np.pi*self.k/2.)
+            py = self.cy*np.sin(-np.pi*self.k/2.)+self.cy*np.cos(-np.pi*self.k/2.)
+         
+            ax.text(px,py,'X',color='red',fontsize=36,zorder=5000,fontweight='bold')
 
             if ((self.goes) & (not self.panel)):
             #use the first image for goes and ace plotting
@@ -846,29 +850,16 @@ class aia_mkimage:
             rot_mat = np.matrix([[1.,0.],[0.,1.]])
 
         # get the image coordinates in pixels
-        print('NEW')
         px0 = img.meta['crpix1']
         py0 = img.meta['crpix2']
-        print(px0,py0)
-        px0,py0 = np.abs(np.matrix([[px0,py0]])*rot_mat).tolist()[0]
-        print(px0,py0)
         # get the image coordinates in arcsec 
         ax0 = img.meta['crval1']
         ay0 = img.meta['crval2']
-        print(ax0,ay0)
-        ax0,ay0 = (np.matrix([[ax0,ay0]])*rot_mat).tolist()[0]
-        print(ax0,ay0)
         # get the image scale in arcsec 
         axd = img.meta['cdelt1']
         ayd = img.meta['cdelt2']
-        print(axd,ayd)
-        axd,ayd = (np.matrix([[axd,ayd]])*rot_mat).tolist()[0]
-        print(axd,ayd)
         #get the number of pixels
         tx,ty = img.data.shape
-        print(tx,ty)
-        tx,ty = np.abs(np.matrix([[tx,ty]])*rot_mat).tolist()[0]
-        print(tx,ty)
 
         #get the max and min x and y values
         pminx,pmaxx = 0.-px0,tx-px0
@@ -877,8 +868,15 @@ class aia_mkimage:
         #convert to arcsec
         maxx,minx = ax0+pmaxx*axd,ax0+pminx*axd
         maxy,miny = ay0+pmaxy*ayd,ay0+pminy*ayd
-        print(maxx,minx)
-        print(maxy,miny)
+
+        #rotate extent if rotated in image
+        if self.k == 1:
+            tminx,tmaxx,tmaxy,tminy = miny,maxy,minx,maxx
+            minx,maxx,maxy,miny = tminx,tmaxx,tmaxy,tminy
+        elif self.k == 3:
+            tminx,tmaxx,tmaxy,tminy = maxy,miny,maxx,minx
+            minx,maxx,maxy,miny = tminx,tmaxx,tmaxy,tminy
+         
 
 
         return maxx,minx,maxy,miny
