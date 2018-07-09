@@ -457,6 +457,11 @@ class aia_mkimage:
             self.xlim = [self.cx-(self.scale[0]*self.w0/2.),self.cx+(self.scale[0]*self.w0/2.)]
             self.ylim = [self.cy-(self.scale[1]*self.h0/2.),self.cy+(self.scale[1]*self.h0/2.)]
  
+        print('LIMITS')
+        print('X')
+        print(self.xlim)
+        print('Y')
+        print(self.ylim)
 
     #for j,i in enumerate(dayarray):
     #reformat file to be in 1900x1200 array and contain timetext
@@ -633,7 +638,7 @@ class aia_mkimage:
             #Add CX and CY position
             px = self.cx*np.cos(np.pi*self.k)-self.cy*np.sin(np.pi*self.k)
             py = self.cy*np.sin(np.pi*self.k)+self.cy*np.cos(np.pi*self.k)
-            ax.text(px,py,'X',color='red',fontsize=36,zorder=5000,fontweight='bold')
+            ax.text(self.cx,self.cy,'X',color='red',fontsize=36,zorder=5000,fontweight='bold')
 
             if ((self.goes) & (not self.panel)):
             #use the first image for goes and ace plotting
