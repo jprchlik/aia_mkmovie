@@ -599,7 +599,9 @@ class aia_mkimage:
             #use color composite image if color3 set
             if self.color3:
                 ax.imshow(img3d,interpolation='none',origin=origin,extent=[minx,maxx,miny,maxy],aspect='auto')
-                ax.text(self.xlim[0]+txtx,self.ylim[0]+txty,'AIA {0}/{1}/{2}'.format(*self.wav)+'- {0}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=5000,fontweight='bold')
+                ax.text(0.01,0.02,
+                        'AIA {0}/{1}/{2}'.format(*self.wav)+'- {0}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),
+                        color='white',fontsize=36,zorder=5000,fontweight='bold',transform=ax.transAxes)
             #loop through axis objects if panel
             elif self.panel:
                 #see if image is flipped
@@ -612,7 +614,9 @@ class aia_mkimage:
                          ax[l].imshow(np.arcsinh(img_dict[p].data/img_dict[p].exposure_time.value),
                                        interpolation='none',cmap=icmap[p],origin=origin,vmin=ivmin[p],vmax=ivmax[p],extent=[minx,maxx,miny,maxy],aspect='auto')
                 #put text in lower left axis
-                ax[2].text(minx+txtx,miny+txty,'AIA {0}/{1}/{2}/{3}'.format(*self.wav)+'- {0}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=24,zorder=5000,fontweight='bold')
+                ax[2].text(0.01,0.02,
+                           'AIA {0}/{1}/{2}/{3}'.format(*self.wav)+'- {0}Z'.format(img[0].date.strftime('%Y/%m/%d - %H:%M:%S')),
+                           color='white',fontsize=24,zorder=5000,fontweight='bold',transform=ax.transAxes)
             else:
                 #see if image is flipped
                 if self.flip_image: 
@@ -623,7 +627,9 @@ class aia_mkimage:
                               interpolation='none',cmap=icmap,origin=origin,vmin=ivmin,vmax=ivmax,extent=[minx,maxx,miny,maxy])
 
                 #Add datetime stamp
-                ax.text(self.xlim[0]+txtx,self.ylim[0]+txty,'AIA {0} - {1}Z'.format(self.wav,img.date.strftime('%Y/%m/%d - %H:%M:%S')),color='white',fontsize=36,zorder=5000,fontweight='bold')
+                ax.text(0.01,0.02,
+                        'AIA {0} - {1}Z'.format(self.wav,img.date.strftime('%Y/%m/%d - %H:%M:%S')),
+                        color='white',fontsize=36,zorder=5000,fontweight='bold',transform=ax.transAxes)
             #set limits for cutout
             if self.cutout:
                 #loop through all if panel
@@ -637,12 +643,6 @@ class aia_mkimage:
                 else:
                     ax.set_xlim(self.xlim)
                     ax.set_ylim(self.ylim)
-
-            #Add CX and CY position (neg. sign because rot 90 is backwards
-            px = self.cx*np.cos(-np.pi*self.k/2.)-self.cy*np.sin(-np.pi*self.k/2.)
-            py = self.cy*np.sin(-np.pi*self.k/2.)+self.cy*np.cos(-np.pi*self.k/2.)
-         
-            ax.text(px,py,'X',color='red',fontsize=36,zorder=5000,fontweight='bold')
 
             if ((self.goes) & (not self.panel)):
             #use the first image for goes and ace plotting
