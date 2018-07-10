@@ -34,7 +34,7 @@ class aia_mkmovie:
 
     #initialize aia_mkmovie
     def __init__(self,start,end,wav,cadence='6m',w0=1900,h0=1144,dpi=300,usehv = False,
-                 panel=False,color3=False,select=False,videowall=True,nproc=1,goes=False,wind=False,
+                 panel=False,color3=False,select=False,videowall=False,nproc=1,goes=False,wind=False,
                  archive="/data/SDO/AIA/synoptic/",dfmt = '%Y/%m/%d %H:%M:%S',
                  outf=True,synoptic=False,odir='working/',frate=10,time_stamp=True,cx=0.0,cy=0.0,
                  prompt=False,cutout=False,rotation=False,rot_time=None,download=False,
@@ -639,6 +639,11 @@ class aia_mkmovie:
 
         #convert fil_dat to numpy time array 
         timelist = np.array(fil_dat)
+        
+        #Exit is no files found for given wavelength
+        if len(timelist) == 0:
+            print('No Images found at ',wav)
+            raise
  
         final_list = [] #list of index to keep for image creation
         for p in self.real_cad: #loop over all cadence values to find best array values
