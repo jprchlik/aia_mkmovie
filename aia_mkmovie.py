@@ -688,7 +688,7 @@ class aia_mkmovie:
 
         #Singular search if only one wavelength specified
         if self.single:
-            fits_files = glob(self.archive+'*'+str(int(self.wav))+'*')
+            fits_files = glob(self.archive+'*.fits')
             if len(fits_files) < 1.:
                 sys.stdout.write('No AIA Files Found')
                 sys.exit(1)
@@ -702,7 +702,7 @@ class aia_mkmovie:
             self.fits_files_temp = []
            #loop over all wavelengths in array
             for i in self.wav:
-                fits_files = glob(self.archive+'*'+str(int(i))+'*')
+                fits_files = glob(self.archive+'*.fits')
                 if len(fits_files) < 1.:
                     sys.stdout.write('No AIA Files Found')
                     sys.exit(1)
