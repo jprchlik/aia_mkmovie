@@ -15,10 +15,10 @@ except ImportError:
 	sys.exit(1)
 import os
 try:
-	import pyfits
+	import astropy.fits as pyfits
 except ImportError:
 	import sys
-	print >> sys.stderr, "pyfits not installed, use \"pip install pyfits --upgrade\""
+	print >> sys.stderr, "astropy not installed, use \"pip install astropy --upgrade\""
 	sys.exit(1)
 import re
 import sys
