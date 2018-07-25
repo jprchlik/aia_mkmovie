@@ -8,7 +8,7 @@ matplotlib.use('agg')
 
 import sys
 
-from make_movie import create_movie
+from aia_mkmovie.make_movie import create_movie
 
 
 import subprocess
@@ -19,7 +19,7 @@ import numpy as np
 from datetime import date,datetime
 from datetime import timedelta as dt
 from multiprocessing import Pool
-import grab_goes_xray_flux as ggxf
+import aia_mkmovie.grab_goes_xray_flux as ggxf
 from mpl_toolkits.axes_grid.inset_locator import inset_axes
 from astropy.io import ascii
 from astropy.table import vstack,Table,join
