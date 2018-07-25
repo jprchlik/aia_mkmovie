@@ -539,7 +539,7 @@ class aia_mkimage:
     
     #test to see if png file already exists and passes quality tests
         if ((test == False) & (check)):
-            print 'Modifying file '+outfi
+            print('Modifying file '+outfi)
     		# J. Prchlik 2016/10/06
     #Block add J. Prchlik (2016/10/06) to give physical coordinate values 
 

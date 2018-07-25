@@ -127,7 +127,7 @@ the extracted regular expression groups"""
 
 		prog = re.compile(r"^(?P<pos>[-+]|)?(?P<num>\d+)(?P<span>[dhms])$")
 		m = re.match(prog, span)
-		print span,m
+		print(span,m)
 		
 		# Allowed datetime data-types
 		if m.group('span') == 'd':
@@ -140,7 +140,7 @@ the extracted regular expression groups"""
 			td = datetime.timedelta( seconds = long( m.group('num') ) )	
 		else:
 			if self.verbose == True or self.debug == True:
-				print >> sys.stderr, "Unable to extract a valid timedelta from span - %s. Setting span to 0 seconds." % span
+				print(sys.stderr, "Unable to extract a valid timedelta from span - {0}. Setting span to 0 seconds.".format( span))
 			return datetime.timedelta( seconds = 0 ), m
 			
 		return td, m
@@ -157,7 +157,7 @@ the extracted regular expression groups"""
 		try:
 			dt = datetime.datetime.strptime(date +" "+ time, "%Y-%m-%d %H:%M:%S")
 		except ValueError as e:
-			print >> sys.stderr, "Unable to extract date-time -", e
+			print(sys.stderr, "Unable to extract date-time -", e)
 			return None, None, None
 		
 		td, expr = self._get_spca(span)
@@ -195,7 +195,7 @@ the extracted regular expression groups"""
 			if os.path.isdir(self.archive +'/'+ start.strftime('%Y/%m/%d')) == True:
 				self._paths.append(self.archive +'/'+ start.strftime('%Y/%m/%d'))
 				if self.verbose == True or self.debug == True:
-					print "Adding date: %s" % (self.archive +'/'+ start.strftime('%Y/%m/%d'))
+					print("Adding date: %s" % (self.archive +'/'+ start.strftime('%Y/%m/%d')))
 			start += i 
 		return self._paths
 	
@@ -272,11 +272,11 @@ the extracted regular expression groups"""
 				fn = f.split('/')[-1]
 				ft = "%s%s%s%s%s%s" % (fn[3:7], fn[7:9], fn[9:11], fn[12:14], fn[14:16], fn[16:18])
 				if self.verbose == True or self.debug == True:
-						print "%s -> %s" % (f, ft)
+						print("%s -> %s" % (f, ft))
 				# successfully parsed filename for date and time 
 				times[i] = ft
 			except ValueError:
-				print >> sys.stderr, "%s - Unable to extract date and time from filename" % f 
+				print( sys.stderr, "%s - Unable to extract date and time from filename" % f)
 				continue
 		
 		return times
@@ -297,11 +297,11 @@ the extracted regular expression groups"""
 		# make sure only FITS files can be analyzed for data quality integrity
 		filetype = self.filetype if filetype is None else filetype
 		if not isinstance(filetype, str):
-			print >> sys.stderr, "Filetype association was not set during initalization or it has been reset."
+			print(sys.stderr, "Filetype association was not set during initalization or it has been reset.")
 			return [], []
 		
 		if re.search('^FITS$', filetype, flags=re.IGNORECASE) is None:
-			print >> sys.stderr, "FITS filetype is expected. Unable to perform quality check on the provided filetype."
+			print(sys.stderr, "FITS filetype is expected. Unable to perform quality check on the provided filetype.")
 			return [], []
 		
 		files = self._filelist if files is None else files
@@ -332,15 +332,15 @@ the extracted regular expression groups"""
 		try:
 			hdulist = pyfits.open(fits_file)
 		except IOError as e:
-			print >> sys.stderr, "%s - Image Quality Result: Failed - Unable to open file." % fits_file
-			if self.debug == True: print >> sys.stderr, e
+			print(sys.stderr, "%s - Image Quality Result: Failed - Unable to open file." % fits_file)
+			if self.debug == True: print(sys.stderr, e)
 			return False # Reject Image
 		
 		# Verify the HDU, fix if required. Return false if verficiation or fix fails.
 		try:
 			hdulist.verify('silentfix')
 		except: 
-			print >> sys.stderr, '%s - Exception handling HDU verfication' % (fits_file)
+			print(sys.stderr, '%s - Exception handling HDU verfication' % (fits_file))
 			hdulist.close()
 			return False
 		

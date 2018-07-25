@@ -27,7 +27,7 @@ def getfiles(day,ftp,sdir):
     try:
         ftp.retrbinary('RETR {0}'.format(files),fhandle.write)
     except:
-        print '{0} not in archive'.format(files)
+        print('{0} not in archive'.format(files))
 
     fhandle.close()
 

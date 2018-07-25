@@ -40,7 +40,7 @@ class create_movie:
         try:
             self.lengs = str(int(1+np.log10(len(self.files)))) # get the number of sig figs for file format
         except OverflowError:
-            print "No {0} files found in {1}".format(self.ext,self.pdir)
+            print("No {0} files found in {1}".format(self.ext,self.pdir))
 
         self.sfmt  = '{0:'+self.lengs+'d}.'+self.ext #Create formating for file out index
 
