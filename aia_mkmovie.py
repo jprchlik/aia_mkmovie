@@ -26,7 +26,7 @@ from astropy.table import vstack,Table,join
 
 
 #import aia_mkimage
-from aia_mkimage import aia_mkimage
+from aia_mkmovie.aia_mkimage import aia_mkimage
 
 
 #Class for making AIA movies
