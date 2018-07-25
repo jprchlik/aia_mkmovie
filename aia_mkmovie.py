@@ -8,7 +8,7 @@ matplotlib.use('agg')
 
 import sys
 
-from aia_mkmovie.make_movie import create_movie
+from.make_movie import create_movie
 
 
 import subprocess
@@ -19,14 +19,14 @@ import numpy as np
 from datetime import date,datetime
 from datetime import timedelta as dt
 from multiprocessing import Pool
-import aia_mkmovie.grab_goes_xray_flux as ggxf
+from . import grab_goes_xray_flux as ggxf
 from mpl_toolkits.axes_grid.inset_locator import inset_axes
 from astropy.io import ascii
 from astropy.table import vstack,Table,join
 
 
 #import aia_mkimage
-from aia_mkmovie.aia_mkimage import aia_mkimage
+from .aia_mkimage import aia_mkimage
 
 
 #Class for making AIA movies
