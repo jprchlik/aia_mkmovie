@@ -595,7 +595,7 @@ class aia_mkmovie:
         """
         Import module/class to download fits files from JSOC
         """
-        import aia_download_files as adf
+        from . import aia_download_files as adf
         #create an archive in the download directory
         self.archive = self.sdir+'/raw/'
         fobj = adf.download_files(self.start,self.end,self.wav,self.cadence,email=self.email,odir=self.archive,max_con=self.nproc)
@@ -772,7 +772,7 @@ class aia_mkmovie:
             import Tkinter as Tk
         else:
             import tkinter as Tk
-        import aia_select_cutout as asc
+        from . import aia_select_cutout as asc
 
 
         #create list of files based roughly on time (indices 0-3 are different wavelengths at roughly the same time)
