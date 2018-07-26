@@ -38,7 +38,7 @@ class aia_mkmovie:
                  archive="/data/SDO/AIA/synoptic/",dfmt = '%Y/%m/%d %H:%M:%S',
                  outf=True,synoptic=False,odir='working/',frate=10,time_stamp=True,cx=0.0,cy=0.0,
                  prompt=False,cutout=False,rotation=False,rot_time=None,download=False,
-                 local=False,email=None,aia_prep=False):
+                 local=False,email=None,aia_prep=False,wavelet=False):
         """ 
         Return an object with parameter to download data, create images, and create a movie
 
@@ -170,6 +170,8 @@ class aia_mkmovie:
             Use aia_prep before creating an image. aia_prep option is most useful
             (and to some level required) when creating a 3 color image/movie.
             Using this option prevents parallel processing. (Default = False).
+        wavelet: boolean, optional
+            Use a wavelet filter to sharpen the image (Default = False)
         """
 
 
@@ -230,6 +232,13 @@ class aia_mkmovie:
             self.end = datetime.strptime(end,dfmt)
         else:
             sys.stdout.write('End time must be datetime object or formatted string')
+
+        #check if wavelet is set (Default = False)
+        if isinstance(wavelet,bool): 
+            self.wavelet = wavelet
+        else:
+            sys.stdout.write('wavelet must be a boolean')
+            sys.exit(1)
 
 
 
@@ -813,7 +822,7 @@ class aia_mkmovie:
                      img_scale=self.img_scale,cutout=self.cutout,
                      ace=self.wind,aceadat=self.aceadat,single=self.single,panel=self.panel,
                      color3=self.color3,time_stamp=self.time_stamp,odir=self.sdir+'/working/',
-                     cx=self.cx,cy=self.cy,aia_prep=self.aia_prep,
+                     cx=self.cx,cy=self.cy,aia_prep=self.aia_prep,wavelet=self.wavelet,
                      #xlim=self.xlim,ylim=self.ylim,
                      synoptic=self.synoptic,rot_time=self.rot_time) for i in self.fits_files]
 
