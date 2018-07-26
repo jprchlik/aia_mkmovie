@@ -30,7 +30,7 @@ class aia_mkimage:
     def __init__(self,dayarray,sday=False,eday=False,w0=1900,h0=1144,dpi=100.,sc=1.,
                  goes=False,goesdat=False,ace=False,aceadat=False,single=True,panel=False,
                  color3=False,time_stamp=True,odir='working/',cutout=False,
-                 img_scale=None,
+                 img_scale=None,wavelet=False,
                  #xlim=None,ylim=None, 
                  synoptic=False,cx=0.,cy=0.,rot_time=None,aia_prep=False,skip_short=False):
 
@@ -112,6 +112,8 @@ class aia_mkimage:
             values but does not error at negative values. If the user gives no image scale
             then a default image scale loads. The default color table works well for single
             and panel images but not for 3 color images.
+        wavelet: boolean, optional
+            Use a wavelet filter to sharpen the image (Default = False)
         synoptic: boolean, optional
             Check using synoptic parameters or not (synoptic are 1024x1024 images).
             Default = False.
@@ -180,9 +182,16 @@ class aia_mkimage:
 
         #check if timestamp flag is set (Default = True)
         if isinstance(time_stamp,bool): 
-            self.timestamp = goes
+            self.timestamp = time_stamp
         else:
             sys.stdout.write('timestamp must be a boolean')
+            sys.exit(1)
+
+        #check if wavelet is set (Default = False)
+        if isinstance(wavelet,bool): 
+            self.wavelet = wavelet
+        else:
+            sys.stdout.write('wavelet must be a boolean')
             sys.exit(1)
 
         #check output directory
@@ -477,6 +486,10 @@ class aia_mkimage:
       
         #check image quality
         check, img = self.qual_check()
+
+        #check the if wavelet flag is set and if so run wavelet processing
+        if self.wavelet:
+            img = self.apply_wavelet(img)
        
         #return image wavelength
         #if isinstance(img,list):
@@ -880,6 +893,69 @@ class aia_mkimage:
 
 
         return maxx,minx,maxy,miny
+
+    #shrink data by median filter
+    def shrink(self,data, rows, cols):
+        return data.reshape(rows, data.shape[0]/rows, cols, data.shape[1]/cols).sum(axis=1).sum(axis=2)
+
+    def apply_wavelet(self,img):
+        ################ADDED undecimated isotropic wavelet transform####################
+        import pywt
+        #Interested in the Stationary Wavelet Transformation or a Trous or starlet (swt2)
+        
+        #get a median filter for wavelet transformation
+        from scipy.signal import medfilt
+        
+        #Use skimage to create the background gaussian filter
+        from scipy.ndimage.filters import gaussian_filter
+
+
+
+        #check to see if image is a list if not make it one for convience
+        unlist = False
+        if not isinstance(img,list):
+            img = [img]
+            unlist = True
+
+        #processed image list
+        nimg = []
+        for j,i in enumerate(img):
+            #Add wavelet transformation
+            wav_img = i.data
+
+            #degrade image for faster comp
+            wav_img_low = self.shrink(wav_img,1024,1024)/16.
+            d_size = 15
+            #get median filter
+            n_back = medfilt(wav_img_low,kernel_size=d_size)
+
+            #expand the median filter back to normal size
+            n_back = np.repeat(n_back,4,axis=1)
+            n_back = np.repeat(n_back,4,axis=0)
+            n_back = gaussian_filter(n_back,2)
+
+            #subtract median filter
+            img_sub = wav_img-n_back
+
+            #Use Biorthogonal Wavelet
+            wavelet = 'bior2.6'
+
+            #use 6 levels
+            n_lev = 6
+            o_wav = pywt.swt2(img_sub, wavelet, level=n_lev )
+            #only use the first 4 (Will need to switch order sometime)
+            f_img = pywt.iswt2(o_wav[0:4],wavelet)
+            #Add  wavelet back into image
+            f_img = f_img+wav_img
+
+            #store the new image and return
+            nimg.append(sunpy.map.Map(f_img,i.meta))
+        
+        #if it was only one file remove list attribute 
+        if unlist:
+            nimg = nimg[0]
+
+        return nimg
         
 
 
